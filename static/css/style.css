@@ -110,3 +110,7 @@ body { background: var(--sp-bg); color: #1d2b3a; }
 .sp-demo-account:hover, .sp-demo-account:focus-visible { border-color: var(--sp-teal); box-shadow: 0 4px 14px rgba(15,163,163,.18);
                                                          transform: translateY(-2px); outline: none; }
 .sp-demo-account.is-admin { background: #fffaf0; }
+
+/* Public-demo banner (DEMO_SANDBOX mode) */
+.sp-demo-banner { background: #fff4d6; border-bottom: 1px solid #f0d58a; color: #6b4e00; font-size: .85rem; }
+.sp-demo-banner .sp-demo-reset { color: #6b4e00; font-weight: 600; font-size: .85rem; }

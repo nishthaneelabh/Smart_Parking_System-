@@ -34,21 +34,33 @@ def get_dsn():
     return dsn.replace("-pooler.", ".")
 
 
-def connect(dsn=None):
+def connect(dsn=None, sandbox=None):
     """Open a NEW independent connection (used directly by tests, scripts and
-    the concurrency demo, which needs two separate connections)."""
+    the concurrency demo, which needs two separate connections).
+
+    sandbox: a visitor's private demo schema (services/demo_sandbox.py); its
+    tables are found first, functions still come from "parking"."""
+    path = f"{sandbox},parking,public" if sandbox else "parking,public"
     return psycopg.connect(
         dsn or get_dsn(),
         autocommit=True,
         row_factory=dict_row,
-        options=f"-c search_path=parking,public -c timezone={APP_TIMEZONE}",
+        options=f"-c search_path={path} -c timezone={APP_TIMEZONE}",
     )
+
+
+def current_sandbox():
+    """The demo sandbox of the current request, or None (normal mode / no request)."""
+    try:
+        return g.get("sandbox")
+    except RuntimeError:          # outside a Flask app context
+        return None
 
 
 def get_db():
     """The connection for the current request (opened on first use)."""
     if "db" not in g:
-        g.db = connect()
+        g.db = connect(sandbox=g.get("sandbox"))
     return g.db
 
 
