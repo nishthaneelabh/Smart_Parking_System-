@@ -23,12 +23,15 @@ APP_TIMEZONE = "Asia/Kolkata"
 
 
 def get_dsn():
-    dsn = os.environ.get("DATABASE_URL")
+    # Hosted Postgres (Neon via Vercel) also provides an unpooled URL; prefer it,
+    # because the pooler rejects the "options" startup parameter used in connect().
+    dsn = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("DATABASE_URL")
     if not dsn:
         raise RuntimeError(
             "DATABASE_URL is not set. Copy .env.example to .env and fill in your PostgreSQL password."
         )
-    return dsn
+    # Neon pooled host "ep-xxx-pooler.region..." -> direct host "ep-xxx.region..."
+    return dsn.replace("-pooler.", ".")
 
 
 def connect(dsn=None):
