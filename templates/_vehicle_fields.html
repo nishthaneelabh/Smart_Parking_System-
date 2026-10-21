@@ -1,0 +1,41 @@
+{# Shared vehicle form fields (used on register.html and vehicles.html) #}
+{% set f = form if form is defined and form else {} %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <label class="form-label" for="registration_no">Registration number</label>
+    <input class="form-control text-uppercase" id="registration_no" name="registration_no" placeholder="TN09AB1234"
+           value="{{ f.registration_no or '' }}" pattern="[A-Za-z]{2}[\s-]?[0-9]{1,2}[\s-]?[A-Za-z]{0,3}[\s-]?[0-9]{4}"
+           {% if vehicle_required %}required{% endif %}>
+    <div class="invalid-feedback">Format like TN09AB1234.</div>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label" for="model_name">Model</label>
+    <input class="form-control" id="model_name" name="model_name" placeholder="Tata Nexon EV" value="{{ f.model_name or '' }}"
+           {% if vehicle_required %}required{% endif %}>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label" for="vehicle_type">Type</label>
+    <select class="form-select" id="vehicle_type" name="vehicle_type">
+      {% for t in ['CAR', 'SUV', 'BIKE'] %}
+        <option value="{{ t }}" {% if f.vehicle_type == t %}selected{% endif %}>{{ t|title }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" role="switch" id="is_ev" name="is_ev" {% if f.is_ev %}checked{% endif %}
+             onchange="document.getElementById('connector-wrap').classList.toggle('d-none', !this.checked)">
+      <label class="form-check-label" for="is_ev">Electric vehicle</label>
+    </div>
+  </div>
+  <div class="col-md-8 {% if not f.is_ev %}d-none{% endif %}" id="connector-wrap">
+    <label class="form-label" for="connector_type">Charging connector</label>
+    <select class="form-select" id="connector_type" name="connector_type">
+      <option value="">Choose…</option>
+      <option value="CCS2" {% if f.connector_type == 'CCS2' %}selected{% endif %}>CCS2 (most new EVs — also works with Type 2 AC)</option>
+      <option value="TYPE2" {% if f.connector_type == 'TYPE2' %}selected{% endif %}>Type 2 (AC only)</option>
+      <option value="CHADEMO" {% if f.connector_type == 'CHADEMO' %}selected{% endif %}>CHAdeMO</option>
+      <option value="BHARAT_AC001" {% if f.connector_type == 'BHARAT_AC001' %}selected{% endif %}>Bharat AC-001</option>
+    </select>
+  </div>
+</div>

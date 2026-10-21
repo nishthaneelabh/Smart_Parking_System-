@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Sign up{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="sp-card p-4 p-md-5 sp-fade-in">
+        <h1 class="h4 fw-bold mb-1">Create your account</h1>
+        <p class="sp-muted mb-4">Add your vehicle now so we can match you with compatible slots and chargers.</p>
+        <form method="post" class="needs-validation" novalidate>
+          {{ csrf() }}
+          <h2 class="h6 text-uppercase sp-muted mb-3">Your details</h2>
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label" for="full_name">Full name</label>
+              <input class="form-control" id="full_name" name="full_name" value="{{ form.full_name }}" minlength="2" maxlength="100" required>
+              <div class="invalid-feedback">Please enter your name.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="phone">Mobile number</label>
+              <div class="input-group has-validation">
+                <span class="input-group-text">+91</span>
+                <input class="form-control" id="phone" name="phone" value="{{ form.phone }}" pattern="[6-9][0-9]{9}" maxlength="10" required>
+                <div class="invalid-feedback">10-digit mobile number starting with 6–9.</div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label" for="email">Email</label>
+              <input type="email" class="form-control" id="email" name="email" value="{{ form.email }}" required>
+              <div class="invalid-feedback">Please enter a valid email.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="password">Password</label>
+              <input type="password" class="form-control" id="password" name="password" minlength="8"
+                     pattern="(?=.*[A-Za-z])(?=.*\d).{8,}" required>
+              <div class="form-text">At least 8 characters, letters and numbers.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="confirm_password">Confirm password</label>
+              <input type="password" class="form-control" id="confirm_password" name="confirm_password" minlength="8" required>
+            </div>
+          </div>
+
+          <h2 class="h6 text-uppercase sp-muted mb-3">Your vehicle <span class="text-lowercase fw-normal">(optional — you can add it later)</span></h2>
+          {% include "_vehicle_fields.html" %}
+
+          <button class="btn btn-primary w-100 py-2 mt-4">Create account</button>
+        </form>
+        <p class="text-center mt-3 mb-0 small">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

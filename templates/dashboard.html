@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, slot_icon, charger_label, empty_state %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-0">Hello, {{ user.full_name.split()[0] }} 👋</h1>
+      <div class="sp-muted small">
+        Membership: <strong>{{ user.membership_tier }}</strong>
+        {% if user.has_accessibility_permit %} · <span class="badge text-bg-info">Accessibility permit</span>{% endif %}
+        · Waiting-list priority:
+        <strong>{{ 3 if user.has_accessibility_permit else (2 if user.membership_tier == 'PREMIUM' else 1) }}</strong>
+      </div>
+    </div>
+    <a href="{{ url_for('parking.slots') }}" class="btn btn-teal"><i class="bi bi-plus-lg"></i> New booking</a>
+  </div>
+
+  {% for o in offers %}
+  <div class="alert alert-info d-flex flex-wrap align-items-center justify-content-between gap-2 sp-fade-in">
+    <div>
+      <i class="bi bi-bell-fill"></i> <strong>A slot is available for you!</strong>
+      Your waiting-list request at <strong>{{ o.location_name }}</strong> ({{ o.start_time|dt('%d %b, %I:%M %p') }})
+      has been matched. Pay within <span class="sp-countdown" data-countdown="{{ o.offer_expires_at.isoformat() }}" data-reload-on-expire="1"></span> to keep it.
+    </div>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('payments.pay', reservation_id=o.offered_reservation_id) }}">Pay &amp; confirm</a>
+  </div>
+  {% endfor %}
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="sp-card sp-stat h-100"><div class="icon mb-2"><i class="bi bi-calendar-event"></i></div>
+      <div class="value">{{ stats.active }}</div><div class="label">Active bookings</div></div></div>
+    <div class="col-6 col-lg-3"><div class="sp-card sp-stat h-100"><div class="icon blue mb-2"><i class="bi bi-check2-circle"></i></div>
+      <div class="value">{{ stats.completed }}</div><div class="label">Completed</div></div></div>
+    <div class="col-6 col-lg-3"><div class="sp-card sp-stat h-100"><div class="icon amber mb-2"><i class="bi bi-hourglass-split"></i></div>
+      <div class="value">{{ waiting|length }}</div><div class="label">Waiting-list requests</div></div></div>
+    <div class="col-6 col-lg-3"><div class="sp-card sp-stat h-100"><div class="icon blue mb-2"><i class="bi bi-currency-rupee"></i></div>
+      <div class="value">{{ stats.spent|inr }}</div><div class="label">Total spent</div></div></div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="sp-card p-0 h-100">
+        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+          <h2 class="h6 fw-bold mb-0">Upcoming &amp; active reservations</h2>
+          <a href="{{ url_for('reservations.my_bookings') }}" class="small">View all</a>
+        </div>
+        {% if active %}
+        <div class="list-group list-group-flush">
+          {% for r in active %}
+          <a href="{{ url_for('reservations.detail', reservation_id=r.reservation_id) }}" class="list-group-item list-group-item-action d-flex gap-3 align-items-center py-3">
+            {{ slot_icon(r.slot_type) }}
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ r.location_name }} · Slot {{ r.slot_code }}</div>
+              <div class="small sp-muted">{{ r.start_time|dt('%a %d %b, %I:%M %p') }} → {{ r.end_time|dt('%I:%M %p') }} · {{ r.registration_no }}</div>
+              {% if r.status == 'HELD' %}
+                <div class="small text-warning-emphasis">Pay within <span class="sp-countdown" data-countdown="{{ r.hold_expires_at.isoformat() }}"></span> or the hold is released</div>
+              {% endif %}
+            </div>
+            <div class="text-end">
+              {{ status_badge(r.status) }}
+              <div class="small fw-semibold mt-1">{{ r.total_amount|inr }}</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+          {% call empty_state('calendar-x', 'No upcoming bookings', 'Find a slot to get started.') %}
+            <a href="{{ url_for('parking.slots') }}" class="btn btn-sm btn-primary mt-3">Find a slot</a>
+          {% endcall %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="sp-card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 fw-bold mb-0">My vehicles</h2>
+          <a href="{{ url_for('auth.vehicles') }}" class="small">Manage</a>
+        </div>
+        {% for v in vehicles %}
+          <div class="d-flex justify-content-between border-bottom py-2 small">
+            <span><i class="bi bi-{{ 'ev-front' if v.is_ev else ('bicycle' if v.vehicle_type == 'BIKE' else 'car-front') }}"></i>
+              <strong>{{ v.registration_no }}</strong> · {{ v.model_name }}</span>
+            {% if v.is_ev %}<span class="badge text-bg-info">{{ v.connector_type|replace('_',' ') }}</span>{% endif %}
+          </div>
+        {% else %}
+          <div class="small sp-muted">No vehicles yet. <a href="{{ url_for('auth.vehicles') }}">Add one</a> to book.</div>
+        {% endfor %}
+      </div>
+      <div class="sp-card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h2 class="h6 fw-bold mb-0">Waiting list</h2>
+          <a href="{{ url_for('waiting_list.index') }}" class="small">Open</a>
+        </div>
+        {% for w in waiting %}
+          <div class="border-bottom py-2 small">
+            <div class="fw-semibold">{{ w.location_name }} · {{ w.slot_type }}{% if w.charger_type %} {{ w.charger_type }}{% endif %}</div>
+            <div class="sp-muted">{{ w.start_time|dt('%d %b, %I:%M %p') }} · position <strong>#{{ w.queue_position }}</strong></div>
+          </div>
+        {% else %}
+          <div class="small sp-muted">You are not waiting for any slot.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

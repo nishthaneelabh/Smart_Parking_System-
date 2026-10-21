@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, empty_state %}
+{% block title %}My Vehicles{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h1 class="h3 fw-bold mb-3">My vehicles</h1>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="sp-card p-0">
+        {% if vehicles %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>Registration</th><th>Model</th><th>Type</th><th>EV connector</th><th>Bookings</th><th></th></tr></thead>
+            <tbody>
+            {% for v in vehicles %}
+              <tr>
+                <td class="fw-semibold">{{ v.registration_no }}</td><td>{{ v.model_name }}</td><td>{{ v.vehicle_type }}</td>
+                <td>{% if v.is_ev %}<span class="badge text-bg-info">{{ v.connector_type|replace('_',' ') }}</span>{% else %}<span class="sp-muted">—</span>{% endif %}</td>
+                <td>{{ v.bookings }}</td>
+                <td class="text-end">
+                  <form method="post" action="{{ url_for('auth.delete_vehicle', vehicle_id=v.vehicle_id) }}" data-confirm="Remove {{ v.registration_no }}?">
+                    {{ csrf() }}<button class="btn btn-sm btn-outline-danger" {% if v.bookings %}title="Has bookings — cannot be deleted"{% endif %}><i class="bi bi-trash"></i></button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          {{ empty_state('car-front', 'No vehicles yet', 'Add a vehicle to start booking.') }}
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <form method="post" class="sp-card p-4 needs-validation" novalidate>
+        {{ csrf() }}
+        <h2 class="h6 fw-bold mb-3">Add a vehicle</h2>
+        {% set vehicle_required = True %}
+        {% include "_vehicle_fields.html" %}
+        <button class="btn btn-primary w-100 mt-3">Add vehicle</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

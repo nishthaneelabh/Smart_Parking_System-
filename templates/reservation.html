@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, csrf, slot_icon, charger_label %}
+{% block title %}Reservation #{{ r.reservation_id }}{% endblock %}
+{% block content %}
+{% set flow = ['HELD', 'CONFIRMED', 'CHECKED_IN', 'COMPLETED'] %}
+{% set pos = flow.index(r.status) if r.status in flow else -1 %}
+<div class="container py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+      <a href="{{ url_for('admin.reservations') if current_user.role == 'ADMIN' else url_for('reservations.my_bookings') }}" class="small"><i class="bi bi-arrow-left"></i> Back</a>
+      <h1 class="h3 fw-bold mb-0">Reservation #{{ r.reservation_id }} {{ status_badge(r.status) }}</h1>
+      {% if r.source == 'WAITLIST' %}<span class="badge text-bg-light border mt-1"><i class="bi bi-hourglass-split"></i> Offered from the waiting list</span>{% endif %}
+    </div>
+  </div>
+
+  {% if r.status == 'HELD' %}
+  <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div><i class="bi bi-clock"></i> This slot is <strong>held</strong> for you. Pay within
+      <span class="sp-countdown" data-countdown="{{ r.hold_expires_at.isoformat() }}" data-reload-on-expire="1"></span>
+      or it will be released to other drivers.</div>
+    <a href="{{ url_for('payments.pay', reservation_id=r.reservation_id) }}" class="btn btn-primary btn-sm"><i class="bi bi-credit-card"></i> Pay {{ (r.parking_fee + r.charging_fee)|inr }}</a>
+  </div>
+  {% elif r.status == 'CONFIRMED' %}
+  <div class="alert alert-success"><i class="bi bi-check-circle"></i> <strong>Booking confirmed.</strong> Your slot is guaranteed for the time below.
+    Check in from 15 minutes before the start time.</div>
+  {% elif r.status in ['CANCELLED', 'EXPIRED', 'NO_SHOW'] and r.cancel_reason %}
+  <div class="alert alert-secondary"><i class="bi bi-info-circle"></i> {{ r.cancel_reason }}</div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="sp-card p-4 mb-4">
+        {% if pos >= 0 %}
+        <div class="sp-steps mb-4">
+          {% for st, icon in [('Held', 'lock'), ('Confirmed', 'credit-card'), ('Checked in', 'box-arrow-in-right'), ('Completed', 'flag')] %}
+            <div class="sp-step {% if loop.index0 < pos or r.status == 'COMPLETED' %}done{% elif loop.index0 == pos %}current{% endif %}">
+              <div class="dot"><i class="bi bi-{{ icon }}"></i></div><span>{{ st }}</span>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="d-flex gap-3 align-items-center mb-3">
+          {{ slot_icon(r.slot_type) }}
+          <div>
+            <div class="h5 fw-bold mb-0">{{ r.location_name }} · Slot {{ r.slot_code }}</div>
+            <div class="sp-muted small">{{ r.city }} · Floor {{ r.floor_level }} · {{ charger_label(r.charger_type, r.power_kw, r.connector_type) }}</div>
+          </div>
+        </div>
+        <div class="row g-3 small">
+          <div class="col-sm-6"><div class="sp-muted">From</div><div class="fw-semibold">{{ r.start_time|dt('%A, %d %b %Y · %I:%M %p') }}</div></div>
+          <div class="col-sm-6"><div class="sp-muted">Until</div><div class="fw-semibold">{{ r.end_time|dt('%A, %d %b %Y · %I:%M %p') }}</div></div>
+          <div class="col-sm-6"><div class="sp-muted">Vehicle</div><div class="fw-semibold">{{ r.registration_no }} · {{ r.model_name }}</div></div>
+          <div class="col-sm-6"><div class="sp-muted">Booked by</div><div class="fw-semibold">{{ r.full_name }}</div></div>
+          {% if r.check_in_time %}<div class="col-sm-6"><div class="sp-muted">Checked in</div><div class="fw-semibold">{{ r.check_in_time|dt }}</div></div>{% endif %}
+          {% if r.check_out_time %}<div class="col-sm-6"><div class="sp-muted">Checked out</div><div class="fw-semibold">{{ r.check_out_time|dt }}</div></div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sp-card p-0">
+        <div class="p-3 border-bottom fw-bold">Payments</div>
+        <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Txn</th><th>Type</th><th>Method</th><th>Amount</th><th>Status</th><th>When</th></tr></thead>
+          <tbody>
+          {% for p in payments %}
+            <tr><td class="small"><code>{{ p.transaction_ref }}</code></td><td>{{ p.payment_type }}</td><td>{{ p.method }}</td>
+                <td>{{ p.amount|inr }}</td><td>{{ status_badge(p.status) }}</td><td class="small">{{ p.paid_at|dt }}</td></tr>
+          {% else %}
+            <tr><td colspan="6" class="text-center sp-muted py-3">No payments yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="sp-card p-4 mb-4">
+        <h2 class="h6 fw-bold mb-3">Bill</h2>
+        <div class="d-flex justify-content-between small mb-1"><span>Parking</span><span>{{ bill.parking_fee|inr }}</span></div>
+        <div class="d-flex justify-content-between small mb-1"><span>EV charging</span><span>{{ bill.charging_fee|inr }}</span></div>
+        <div class="d-flex justify-content-between small mb-1 {% if bill.overstay_fine > 0 %}text-danger fw-semibold{% endif %}">
+          <span>Overstay fine{% if bill.overstay_minutes %} ({{ bill.overstay_minutes }} min late){% endif %}</span><span>{{ bill.overstay_fine|inr }}</span></div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold"><span>Total</span><span>{{ bill.total_amount|inr }}</span></div>
+        <div class="d-flex justify-content-between small sp-muted"><span>Paid</span><span>{{ bill.amount_paid|inr }}</span></div>
+        {% if bill.amount_refunded > 0 %}<div class="d-flex justify-content-between small text-success"><span>Refunded</span><span>{{ bill.amount_refunded|inr }}</span></div>{% endif %}
+        {% if bill.balance_due > 0 and r.status != 'HELD' %}
+          <div class="d-flex justify-content-between fw-bold text-danger mt-1"><span>Balance due</span><span>{{ bill.balance_due|inr }}</span></div>
+        {% endif %}
+      </div>
+
+      <div class="sp-card p-4">
+        <h2 class="h6 fw-bold mb-3">Actions</h2>
+        <div class="d-grid gap-2">
+          {% if r.status == 'HELD' or (r.status == 'COMPLETED' and bill.balance_due > 0) %}
+            <a href="{{ url_for('payments.pay', reservation_id=r.reservation_id) }}" class="btn btn-primary"><i class="bi bi-credit-card"></i>
+              {{ 'Pay & confirm' if r.status == 'HELD' else 'Pay balance' }}</a>
+          {% endif %}
+          {% if r.status == 'CONFIRMED' %}
+            <form method="post" action="{{ url_for('reservations.check_in', reservation_id=r.reservation_id) }}">
+              {{ csrf() }}<button class="btn btn-teal w-100"><i class="bi bi-box-arrow-in-right"></i> Check in</button>
+            </form>
+          {% endif %}
+          {% if r.status == 'CHECKED_IN' %}
+            <form method="post" action="{{ url_for('reservations.check_out', reservation_id=r.reservation_id) }}">
+              {{ csrf() }}
+              {% if current_user.role == 'ADMIN' %}
+                <label class="form-label small" for="checkout_time">Simulate check-out time (admin, for demo)</label>
+                <input type="datetime-local" class="form-control form-control-sm mb-2" id="checkout_time" name="checkout_time"
+                       value="{{ to_input(r.end_time) }}">
+              {% endif %}
+              <button class="btn btn-teal w-100"><i class="bi bi-box-arrow-right"></i> Check out</button>
+            </form>
+          {% endif %}
+          {% if r.status in ['HELD', 'CONFIRMED'] and (r.start_time > now or current_user.role == 'ADMIN') %}
+            <form method="post" action="{{ url_for('reservations.cancel', reservation_id=r.reservation_id) }}"
+                  data-confirm="Cancel this reservation? Any payment will be refunded in full.">
+              {{ csrf() }}<button class="btn btn-outline-danger w-100"><i class="bi bi-x-circle"></i> Cancel reservation</button>
+            </form>
+          {% endif %}
+          {% if r.status in ['COMPLETED', 'CANCELLED', 'EXPIRED', 'NO_SHOW'] %}
+            <a href="{{ url_for('parking.slots', location_id=r.location_id) }}" class="btn btn-outline-primary">Book again</a>
+          {% endif %}
+        </div>
+        <div class="small sp-muted mt-3">Overstay rule: 15 minutes grace after your end time; after that every started hour
+          costs 2× the parking rate.</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

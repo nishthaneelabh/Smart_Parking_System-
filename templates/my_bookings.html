@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, slot_icon, empty_state %}
+{% block title %}My Bookings{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 fw-bold mb-0">My bookings</h1>
+    <a href="{{ url_for('parking.slots') }}" class="btn btn-teal"><i class="bi bi-plus-lg"></i> New booking</a>
+  </div>
+  <ul class="nav nav-pills mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-active">Upcoming &amp; active <span class="badge text-bg-light">{{ groups.active|length }}</span></button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-history">History <span class="badge text-bg-light">{{ groups.history|length }}</span></button></li>
+  </ul>
+  <div class="tab-content">
+    {% for key in ['active', 'history'] %}
+    <div class="tab-pane fade {% if loop.first %}show active{% endif %}" id="tab-{{ key }}">
+      <div class="sp-card p-0">
+        {% if groups[key] %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead><tr><th>#</th><th>Slot</th><th>When</th><th>Vehicle</th><th>Status</th><th class="text-end">Total</th><th></th></tr></thead>
+            <tbody>
+            {% for r in groups[key] %}
+              <tr>
+                <td class="sp-muted">{{ r.reservation_id }}</td>
+                <td><div class="d-flex gap-2 align-items-center">{{ slot_icon(r.slot_type) }}
+                  <div><div class="fw-semibold">{{ r.location_name }}</div><div class="small sp-muted">Slot {{ r.slot_code }}{% if r.charger_type %} · {{ r.charger_type }} {{ r.power_kw|round(1) }} kW{% endif %}</div></div></div></td>
+                <td class="small">{{ r.start_time|dt('%d %b %Y') }}<br>{{ r.start_time|dt('%I:%M %p') }} – {{ r.end_time|dt('%I:%M %p') }}</td>
+                <td class="small">{{ r.registration_no }}</td>
+                <td>{{ status_badge(r.status) }}{% if r.overstay_fine > 0 %}<div class="small text-danger">fine {{ r.overstay_fine|inr }}</div>{% endif %}</td>
+                <td class="text-end fw-semibold">{{ r.total_amount|inr }}</td>
+                <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('reservations.detail', reservation_id=r.reservation_id) }}">Open</a></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          {{ empty_state('calendar-x', 'Nothing here yet', 'Your reservations will appear here.') }}
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

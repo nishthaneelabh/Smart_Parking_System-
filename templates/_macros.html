@@ -1,0 +1,33 @@
+{% macro status_badge(status) -%}
+  <span class="badge sp-badge text-bg-{{ status|badge }}">{{ status|replace('_', ' ') }}</span>
+{%- endmacro %}
+
+{% macro csrf() -%}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% macro slot_icon(slot_type, charger_type=None) -%}
+  {% if slot_type == 'EV' %}
+    <span class="sp-slot-icon sp-ev" title="EV charging slot"><i class="bi bi-ev-station"></i></span>
+  {% else %}
+    <span class="sp-slot-icon" title="Regular parking"><i class="bi bi-p-square"></i></span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro charger_label(charger_type, power_kw, connector) -%}
+  {% if charger_type %}
+    <span class="badge rounded-pill {{ 'text-bg-danger' if charger_type == 'DC' else 'text-bg-info' }}">
+      {{ charger_type }}{% if charger_type == 'DC' %} Fast{% endif %} · {{ power_kw|round(1) }} kW
+    </span>
+    <span class="badge rounded-pill text-bg-light border">{{ connector|replace('_', ' ') }}</span>
+  {% endif %}
+{%- endmacro %}
+
+{% macro empty_state(icon, title, text) -%}
+  <div class="text-center text-muted py-5">
+    <i class="bi bi-{{ icon }} display-5 d-block mb-2 opacity-50"></i>
+    <div class="fw-semibold">{{ title }}</div>
+    <div class="small">{{ text }}</div>
+    {{ caller() if caller else '' }}
+  </div>
+{%- endmacro %}

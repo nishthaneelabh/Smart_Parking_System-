@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+{% set ep = request.endpoint or '' %}
+<div class="container-fluid px-lg-4 py-3">
+  <div class="row g-4">
+    <aside class="col-lg-2">
+      <div class="sp-card p-2 sp-admin-nav">
+        <div class="small text-uppercase sp-muted px-2 pt-1 pb-2 fw-semibold">Admin</div>
+        <nav class="nav flex-column">
+          {% for endpoint, icon, label in [
+            ('admin.dashboard', 'speedometer2', 'Dashboard'),
+            ('admin.concurrency', 'people', 'Concurrency demo'),
+            ('admin.locations', 'geo-alt', 'Locations'),
+            ('admin.slots', 'p-square', 'Parking slots'),
+            ('admin.chargers', 'ev-station', 'Chargers'),
+            ('admin.reservations', 'calendar-check', 'Reservations'),
+            ('admin.waiting_list', 'hourglass-split', 'Waiting list'),
+            ('admin.payments', 'receipt', 'Payments'),
+            ('admin.pricing', 'tags', 'Pricing & policy'),
+            ('admin.audit', 'journal-text', 'Audit log')] %}
+            <a class="nav-link {% if ep == endpoint %}active{% endif %}" href="{{ url_for(endpoint) }}"><i class="bi bi-{{ icon }}"></i> {{ label }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    </aside>
+    <section class="col-lg-10">
+      {% block admin_content %}{% endblock %}
+    </section>
+  </div>
+</div>
+{% endblock %}

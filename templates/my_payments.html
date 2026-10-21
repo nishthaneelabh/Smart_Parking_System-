@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, empty_state %}
+{% block title %}My Payments{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h1 class="h3 fw-bold mb-3">My payments</h1>
+  <div class="sp-card p-0">
+    {% if payments %}
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead><tr><th>Transaction</th><th>Reservation</th><th>Type</th><th>Method</th><th>Status</th><th>Date</th><th class="text-end">Amount</th></tr></thead>
+        <tbody>
+        {% for p in payments %}
+          <tr>
+            <td><code class="small">{{ p.transaction_ref }}</code></td>
+            <td><a href="{{ url_for('reservations.detail', reservation_id=p.reservation_id) }}">#{{ p.reservation_id }}</a>
+              <div class="small sp-muted">{{ p.location_name }} · {{ p.slot_code }}</div></td>
+            <td>{{ p.payment_type }}</td><td>{{ p.method }}</td><td>{{ status_badge(p.status) }}</td>
+            <td class="small">{{ p.paid_at|dt }}</td><td class="text-end fw-semibold">{{ p.amount|inr }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      {{ empty_state('receipt', 'No payments yet', 'Payments for your bookings will appear here.') }}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

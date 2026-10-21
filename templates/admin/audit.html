@@ -1,0 +1,21 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Audit Log{% endblock %}
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-1">Audit log</h1>
+<p class="sp-muted">Every status change on reservations, chargers, waiting-list entries and payments is recorded here by
+  the trigger <code>tf_audit_status</code> — the application never writes to this table directly.</p>
+<div class="sp-card p-0">
+  <div class="table-responsive">
+    <table class="table mb-0 small">
+      <thead><tr><th>#</th><th>When</th><th>Table</th><th>Record</th><th>Action</th><th>Old → New</th><th>Details</th></tr></thead>
+      <tbody>
+      {% for a in logs %}
+        <tr><td>{{ a.log_id }}</td><td class="text-nowrap">{{ a.changed_at|dt('%d %b %H:%M:%S') }}</td><td><code>{{ a.table_name }}</code></td>
+            <td>{{ a.record_id }}</td><td>{{ a.action }}</td><td>{{ a.old_status or '∅' }} → <strong>{{ a.new_status }}</strong></td>
+            <td class="sp-muted">{{ a.details }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import status_badge, csrf %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 fw-bold mb-0">Operations dashboard</h1>
+  <form method="post" action="{{ url_for('admin.run_jobs') }}">
+    {{ csrf() }}
+    <button class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Run scheduled jobs now</button>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for value, label, icon, cls in [
+      (stats.occupied_now ~ ' / ' ~ stats.slots, 'Slots occupied now', 'p-square', 'blue'),
+      (stats.confirmed, 'Confirmed upcoming', 'calendar-check', ''),
+      (stats.held, 'Temporary holds', 'lock', 'amber'),
+      (stats.waiting, 'Waiting in queue', 'hourglass-split', 'amber'),
+      (stats.faulty_chargers ~ ' / ' ~ stats.chargers, 'Faulty chargers', 'exclamation-triangle', 'red'),
+      (stats.revenue|inr, 'Revenue collected', 'currency-rupee', 'blue'),
+      (stats.fines|inr, 'Overstay fines', 'alarm', 'red'),
+      (stats.users, 'Registered drivers', 'people', '')] %}
+  <div class="col-6 col-xl-3">
+    <div class="sp-card sp-stat h-100 d-flex gap-3 align-items-center">
+      <div class="icon {{ cls }}"><i class="bi bi-{{ icon }}"></i></div>
+      <div><div class="value">{{ value }}</div><div class="label">{{ label }}</div></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="sp-card p-0 mb-4">
+      <div class="p-3 border-bottom fw-bold">Locations</div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Location</th><th>Occupancy now</th><th>Upcoming</th><th class="text-end">Revenue</th></tr></thead>
+          <tbody>
+          {% for l in by_location %}
+            {% set pct = (100 * l.occupied / l.slots)|round|int if l.slots else 0 %}
+            <tr>
+              <td><div class="fw-semibold">{{ l.name }}</div><div class="small sp-muted">{{ l.city }}</div></td>
+              <td style="min-width:160px">
+                <div class="small">{{ l.occupied }} / {{ l.slots }} ({{ pct }}%)</div>
+                <div class="progress" style="height:6px"><div class="progress-bar bg-info" style="width: {{ pct }}%"></div></div>
+              </td>
+              <td>{{ l.upcoming }}</td>
+              <td class="text-end">{{ l.revenue|inr }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="sp-card p-3 mb-4">
+      <div class="fw-bold mb-2">Reservations by status</div>
+      {% set total = by_status|sum(attribute='n') %}
+      {% for s in by_status %}
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div style="width:110px">{{ status_badge(s.status) }}</div>
+          <div class="progress flex-grow-1" style="height:8px">
+            <div class="progress-bar bg-{{ s.status|badge }}" style="width: {{ (100 * s.n / total)|round|int if total else 0 }}%"></div>
+          </div>
+          <div class="small fw-semibold" style="width:32px;text-align:right">{{ s.n }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="sp-card p-0">
+      <div class="p-3 border-bottom d-flex justify-content-between"><span class="fw-bold">Recent activity (written by triggers)</span>
+        <a href="{{ url_for('admin.audit') }}" class="small">Audit log</a></div>
+      <ul class="list-group list-group-flush small">
+        {% for a in recent %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span><code>{{ a.table_name }}</code> #{{ a.record_id }}: {{ a.old_status or a.action }} → <strong>{{ a.new_status }}</strong></span>
+            <span class="sp-muted">{{ a.changed_at|dt('%d %b %H:%M') }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

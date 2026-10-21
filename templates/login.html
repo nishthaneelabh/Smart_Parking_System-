@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center g-4">
+    <div class="{{ 'col-lg-5' if demo_accounts else 'col-md-6 col-lg-5' }}">
+      <div class="sp-card p-4 p-md-5 sp-fade-in">
+        <h1 class="h4 fw-bold mb-1">Welcome back</h1>
+        <p class="sp-muted mb-4">Log in to reserve parking and EV chargers.</p>
+        <form method="post" class="needs-validation" novalidate>
+          {{ csrf() }}
+          <div class="mb-3">
+            <label class="form-label" for="email">Email</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ email }}" required autofocus>
+            <div class="invalid-feedback">Please enter your email.</div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label" for="password">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+            <div class="invalid-feedback">Please enter your password.</div>
+          </div>
+          <button class="btn btn-primary w-100 py-2">Log in</button>
+        </form>
+        <p class="text-center mt-3 mb-0 small">New here? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+      </div>
+    </div>
+
+    {% if demo_accounts %}
+    <div class="col-lg-7">
+      <div class="sp-card p-4 sp-fade-in">
+        <div class="d-flex justify-content-between align-items-start mb-1">
+          <h2 class="h5 fw-bold mb-0"><i class="bi bi-people"></i> Quick demo login</h2>
+          <span class="badge text-bg-warning">sample data</span>
+        </div>
+        <p class="sp-muted small mb-3">Click an account to log in as that person from <code>seed.sql</code>.
+          Each one is set up to show a different part of the system.</p>
+        <div class="row g-2">
+          {% for a in demo_accounts %}
+          <div class="col-md-6">
+            <form method="post" class="h-100">
+              {{ csrf() }}
+              <input type="hidden" name="email" value="{{ a.email }}">
+              <input type="hidden" name="password" value="{{ a.password }}">
+              <button type="submit" class="sp-demo-account w-100 h-100 text-start {% if a.role == 'ADMIN' %}is-admin{% endif %}">
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                  <span class="fw-semibold">{{ a.full_name }}</span>
+                  {% if a.role == 'ADMIN' %}<span class="badge text-bg-warning">ADMIN</span>
+                  {% elif a.has_accessibility_permit %}<span class="badge text-bg-info">Priority 3</span>
+                  {% elif a.membership_tier == 'PREMIUM' %}<span class="badge text-bg-primary">Premium</span>
+                  {% else %}<span class="badge text-bg-light border">User</span>{% endif %}
+                </div>
+                <div class="small sp-muted text-truncate">{{ a.email }}</div>
+                <div class="small mt-1">{{ a.note }}</div>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="small sp-muted mt-3">Passwords: admin <code>Admin@123</code>, everyone else <code>Password@123</code>.
+          Reset all sample data any time with <code>python scripts/init_db.py --seed-only</code>.</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

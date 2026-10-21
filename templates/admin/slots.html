@@ -1,0 +1,81 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import csrf, status_badge, charger_label %}
+{% block title %}Manage Slots{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 fw-bold mb-0">Parking slots</h1>
+  <form method="get">
+    <select name="location_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All locations</option>
+      {% for l in locations %}<option value="{{ l.location_id }}" {% if l.location_id == location_id %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+<div class="alert alert-light border small">
+  <strong>Physical status</strong> (FREE / OCCUPIED) is changed only by trigger B on check-in / check-out.
+  A slot with future bookings is still FREE right now — future availability is calculated from the reservations table.
+</div>
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="sp-card p-0">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead><tr><th>Slot</th><th>Location</th><th>Type</th><th>Charger</th><th>Physical now</th><th>Upcoming</th><th></th></tr></thead>
+          <tbody>
+          {% for s in slots %}
+            <tr class="{% if not s.is_active %}opacity-50{% endif %}">
+              <td class="fw-semibold">{{ s.slot_code }}<div class="small sp-muted">#{{ s.slot_id }} · floor {{ s.floor_level }}</div></td>
+              <td class="small">{{ s.location_name }}</td>
+              <td class="small">{{ s.slot_type }} · {{ s.size_class }}</td>
+              <td>{% if s.charger_id %}{{ charger_label(s.charger_type, s.power_kw, s.connector_type) }}
+                  {% if s.charger_status == 'FAULTY' %}{{ status_badge('FAULTY') }}{% endif %}{% else %}<span class="sp-muted">—</span>{% endif %}</td>
+              <td>{{ status_badge(s.occupancy_status) }}</td>
+              <td class="small">{{ s.upcoming_bookings }}{% if s.next_reservation_at %}<div class="sp-muted">next {{ s.next_reservation_at|dt('%d %b %H:%M') }}</div>{% endif %}</td>
+              <td class="text-end">
+                <form method="post" action="{{ url_for('admin.toggle_slot', slot_id=s.slot_id) }}">
+                  {{ csrf() }}<input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="btn btn-sm {{ 'btn-outline-secondary' if s.is_active else 'btn-outline-success' }}">{{ 'Disable' if s.is_active else 'Enable' }}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <form method="post" class="sp-card p-4 needs-validation" novalidate>
+      {{ csrf() }}
+      <h2 class="h6 fw-bold mb-3">Add slot</h2>
+      <div class="mb-2"><label class="form-label small" for="a-loc">Location</label>
+        <select class="form-select" id="a-loc" name="location_id" required>
+          {% for l in locations %}<option value="{{ l.location_id }}" {% if l.location_id == location_id %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+        </select></div>
+      <div class="row g-2 mb-2">
+        <div class="col-6"><label class="form-label small" for="a-code">Slot code</label><input class="form-control" id="a-code" name="slot_code" maxlength="10" required></div>
+        <div class="col-6"><label class="form-label small" for="a-floor">Floor</label><input class="form-control" id="a-floor" name="floor_level" type="number" min="-5" max="20" value="0"></div>
+      </div>
+      <div class="row g-2 mb-2">
+        <div class="col-6"><label class="form-label small" for="a-type">Type</label>
+          <select class="form-select" id="a-type" name="slot_type" onchange="document.getElementById('ev-fields').classList.toggle('d-none', this.value !== 'EV')">
+            <option value="REGULAR">Regular</option><option value="EV">EV</option></select></div>
+        <div class="col-6"><label class="form-label small" for="a-size">Size</label>
+          <select class="form-select" id="a-size" name="size_class"><option>CAR</option><option>SUV</option><option>BIKE</option></select></div>
+      </div>
+      <div id="ev-fields" class="d-none border rounded-3 p-2 mb-2">
+        <div class="small fw-semibold mb-1">Charger (created in the same transaction)</div>
+        <div class="row g-2">
+          <div class="col-6"><select class="form-select form-select-sm" name="charger_type"><option>AC</option><option>DC</option></select></div>
+          <div class="col-6"><input class="form-control form-control-sm" name="power_kw" type="number" step="0.1" min="1" max="350" placeholder="kW" value="7.4"></div>
+          <div class="col-12"><select class="form-select form-select-sm" name="connector_type">
+            <option value="TYPE2">Type 2 (AC)</option><option value="BHARAT_AC001">Bharat AC-001 (AC)</option>
+            <option value="CCS2">CCS2 (DC)</option><option value="CHADEMO">CHAdeMO (DC)</option></select></div>
+        </div>
+        <div class="small sp-muted mt-1">AC: ≤ 22 kW with Type 2 / Bharat AC-001. DC: ≥ 15 kW with CCS2 / CHAdeMO (CHECK constraint).</div>
+      </div>
+      <button class="btn btn-primary w-100 mt-2">Add slot</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

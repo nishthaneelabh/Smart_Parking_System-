@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Locations{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-0">Parking locations</h1>
+      <div class="sp-muted">“Free now” is the live physical status. Use <em>Check availability</em> to see bookable slots for your time.</div>
+    </div>
+    <form class="d-flex gap-2" method="get">
+      <select name="city" class="form-select" onchange="this.form.submit()">
+        <option value="">All cities</option>
+        {% for c in cities %}<option value="{{ c }}" {% if c == city %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <div class="row g-4">
+    {% for l in locations %}
+    <div class="col-md-6 col-lg-4">
+      <div class="sp-card sp-card-hover h-100 d-flex flex-column">
+        <div class="p-4 flex-grow-1">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h2 class="h5 fw-bold mb-0">{{ l.name }}</h2>
+            <span class="badge text-bg-light border">{{ l.city }}</span>
+          </div>
+          <div class="small sp-muted mb-3"><i class="bi bi-geo-alt"></i> {{ l.address }}, {{ l.pincode }}</div>
+          <div class="row text-center g-2 mb-3">
+            <div class="col-4"><div class="fw-bold fs-5">{{ l.total_slots }}</div><div class="small sp-muted">Slots</div></div>
+            <div class="col-4"><div class="fw-bold fs-5 text-success">{{ l.free_now }}</div><div class="small sp-muted">Free now</div></div>
+            <div class="col-4"><div class="fw-bold fs-5 text-info">{{ l.ev_slots }}</div><div class="small sp-muted">EV slots</div></div>
+          </div>
+          <div class="d-flex flex-wrap gap-1">
+            {% if l.ac_ok %}<span class="badge rounded-pill text-bg-info">{{ l.ac_ok }} AC working</span>{% endif %}
+            {% if l.dc_ok %}<span class="badge rounded-pill text-bg-danger">{{ l.dc_ok }} DC fast working</span>{% endif %}
+            {% if l.faulty %}<span class="badge rounded-pill text-bg-warning"><i class="bi bi-exclamation-triangle"></i> {{ l.faulty }} faulty</span>{% endif %}
+          </div>
+        </div>
+        <div class="p-3 border-top d-flex gap-2">
+          <a href="{{ url_for('parking.slots', location_id=l.location_id) }}" class="btn btn-primary btn-sm flex-grow-1">Check availability</a>
+          {% if l.ev_slots %}
+          <a href="{{ url_for('parking.slots', location_id=l.location_id, slot_type='EV') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-ev-station"></i> EV</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% else %}
+      <div class="col-12 text-center sp-muted py-5">No locations found.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

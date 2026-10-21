@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="sp-hero py-5 mb-5">
+  <div class="container py-lg-4">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7 sp-fade-in">
+        <span class="badge rounded-pill text-bg-light text-uppercase mb-3">Real-time · No double bookings</span>
+        <h1 class="display-5 mb-3">Smart Parking &amp; EV Charging, reserved in seconds.</h1>
+        <p class="lead mb-4">Find a parking space or a compatible EV charger, lock it with a safe database
+          transaction, and pay — even when hundreds of drivers are booking at the same moment.</p>
+        <div class="sp-flow mb-4">
+          <span><i class="bi bi-search"></i> Search</span><i class="bi bi-arrow-right"></i>
+          <span><i class="bi bi-shield-check"></i> Check</span><i class="bi bi-arrow-right"></i>
+          <span><i class="bi bi-lock"></i> Reserve</span><i class="bi bi-arrow-right"></i>
+          <span><i class="bi bi-car-front"></i> Use</span><i class="bi bi-arrow-right"></i>
+          <span><i class="bi bi-receipt"></i> Complete</span>
+        </div>
+        {% if current_user %}
+          <a href="{{ url_for('parking.slots') }}" class="btn btn-teal btn-lg me-2"><i class="bi bi-search"></i> Find a slot</a>
+          <a href="{{ url_for('auth.dashboard') }}" class="btn btn-outline-light btn-lg">My dashboard</a>
+        {% else %}
+          <a href="{{ url_for('auth.register') }}" class="btn btn-teal btn-lg me-2">Create free account</a>
+          <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">Log in</a>
+        {% endif %}
+      </div>
+      <div class="col-lg-5">
+        <div class="row g-3">
+          {% for value, label, icon in [(stats.locations, 'Locations', 'geo-alt'), (stats.slots, 'Parking slots', 'p-square'),
+                                         (stats.chargers, 'Working chargers', 'ev-station'), (stats.cities, 'Cities', 'buildings')] %}
+          <div class="col-6">
+            <div class="sp-card sp-stat text-dark h-100">
+              <div class="icon mb-2"><i class="bi bi-{{ icon }}"></i></div>
+              <div class="value">{{ value }}</div>
+              <div class="label">{{ label }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container">
+  <h2 class="sp-section-title h4 mb-3">Why this system is reliable</h2>
+  <div class="row g-3 mb-5">
+    {% for icon, title, text in [
+      ('shield-lock', 'No double bookings', 'Each booking locks the slot row (SELECT … FOR UPDATE) and a PostgreSQL EXCLUDE constraint rejects any overlapping reservation.'),
+      ('ev-station', 'EV charger matching', 'Only chargers that fit your car’s connector (CCS2, Type 2, CHAdeMO, Bharat AC-001) and are working are offered.'),
+      ('graph-up-arrow', 'Dynamic pricing', 'Peak-hour multipliers and AC / DC fast-charging rates are stored in the database and applied per 15 minutes.'),
+      ('hourglass-split', 'Priority waiting list', 'Full? Join the queue. Higher priority first, then first-come-first-served. You get a 10-minute offer when a slot frees up.'),
+      ('lightning-charge', 'Automatic updates', 'Triggers mark slots occupied, calculate overstay fines and cancel bookings on faulty chargers.'),
+      ('clock-history', 'Holds that expire', 'Unpaid holds are released automatically so slots are never blocked by abandoned bookings.')] %}
+    <div class="col-md-6 col-lg-4">
+      <div class="sp-card sp-card-hover p-4 h-100">
+        <div class="sp-slot-icon sp-ev mb-3"><i class="bi bi-{{ icon }}"></i></div>
+        <h3 class="h6 fw-bold">{{ title }}</h3>
+        <p class="sp-muted small mb-0">{{ text }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="sp-card p-4 mb-4">
+    <div class="row align-items-center g-3">
+      <div class="col-md-8">
+        <h2 class="h5 fw-bold mb-1">Browse parking locations</h2>
+        <p class="sp-muted mb-0">Malls, metro stations and campuses in Chennai, Bengaluru and Mumbai.</p>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{{ url_for('parking.locations') }}" class="btn btn-primary"><i class="bi bi-geo-alt"></i> View locations</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

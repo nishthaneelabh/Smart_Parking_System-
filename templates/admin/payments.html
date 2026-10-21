@@ -1,0 +1,28 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import status_badge %}
+{% block title %}Payments{% endblock %}
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-3">Payments <span class="badge text-bg-warning fs-6 align-middle">simulated</span></h1>
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="sp-card sp-stat"><div class="value">{{ totals.collected|inr }}</div><div class="label">Collected (SUCCESS)</div></div></div>
+  <div class="col-md-4"><div class="sp-card sp-stat"><div class="value">{{ totals.refunded|inr }}</div><div class="label">Refunded</div></div></div>
+  <div class="col-md-4"><div class="sp-card sp-stat"><div class="value">{{ totals.failed }}</div><div class="label">Failed attempts</div></div></div>
+</div>
+<div class="sp-card p-0">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 small">
+      <thead><tr><th>#</th><th>Transaction</th><th>Reservation</th><th>Driver</th><th>Type</th><th>Method</th><th>Status</th><th>Paid at</th><th class="text-end">Amount</th></tr></thead>
+      <tbody>
+      {% for p in payments %}
+        <tr>
+          <td>{{ p.payment_id }}</td><td><code>{{ p.transaction_ref }}</code></td>
+          <td><a href="{{ url_for('reservations.detail', reservation_id=p.reservation_id) }}">#{{ p.reservation_id }}</a> <span class="sp-muted">{{ p.location_name }} {{ p.slot_code }}</span></td>
+          <td>{{ p.full_name }}</td><td>{{ p.payment_type }}</td><td>{{ p.method }}</td><td>{{ status_badge(p.status) }}</td>
+          <td>{{ p.paid_at|dt('%d %b %H:%M') }}</td><td class="text-end fw-semibold">{{ p.amount|inr }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

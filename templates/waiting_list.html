@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_badge, csrf, empty_state %}
+{% block title %}Waiting List{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h1 class="h3 fw-bold mb-1">Priority waiting list</h1>
+  <p class="sp-muted">When every compatible slot is taken, wait here instead of searching again and again.
+    Order: <strong>priority</strong> (higher first) → <strong>request time</strong> (earlier first) → entry number.
+    When a matching slot frees up you get a <strong>temporary offer</strong> — pay within 10 minutes to confirm,
+    otherwise the offer passes to the next person.</p>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="sp-card p-0">
+        <div class="p-3 border-bottom fw-bold">My requests</div>
+        {% if entries %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr><th>#</th><th>Where</th><th>When</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+            {% for e in entries %}
+              <tr>
+                <td class="sp-muted">{{ e.entry_id }}</td>
+                <td><div class="fw-semibold">{{ e.location_name }}</div>
+                    <div class="small sp-muted">{{ e.slot_type }}{% if e.charger_type %} · {{ e.charger_type }}{% endif %} · {{ e.registration_no }}</div></td>
+                <td class="small">{{ e.start_time|dt('%d %b, %I:%M %p') }} – {{ e.end_time|dt('%I:%M %p') }}</td>
+                <td><span class="badge text-bg-light border">{{ e.priority }} · {{ e.priority_label }}</span></td>
+                <td>{{ status_badge(e.status) }}
+                  {% if e.status == 'WAITING' %}<div class="small">Position <strong>#{{ e.queue_position }}</strong></div>{% endif %}
+                  {% if e.status == 'OFFERED' %}<div class="small">expires in <span class="sp-countdown" data-countdown="{{ e.offer_expires_at.isoformat() }}" data-reload-on-expire="1"></span></div>{% endif %}
+                </td>
+                <td class="text-end text-nowrap">
+                  {% if e.status == 'OFFERED' %}
+                    <a class="btn btn-sm btn-primary" href="{{ url_for('payments.pay', reservation_id=e.offered_reservation_id) }}">Pay &amp; confirm</a>
+                  {% elif e.status == 'ACCEPTED' %}
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('reservations.detail', reservation_id=e.offered_reservation_id) }}">View booking</a>
+                  {% endif %}
+                  {% if e.status in ['WAITING', 'OFFERED'] %}
+                    <form method="post" action="{{ url_for('waiting_list.leave', entry_id=e.entry_id) }}" class="d-inline"
+                          data-confirm="{{ 'Decline this offer?' if e.status == 'OFFERED' else 'Leave the waiting list?' }}">
+                      {{ csrf() }}<button class="btn btn-sm btn-outline-danger">{{ 'Decline' if e.status == 'OFFERED' else 'Leave' }}</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          {{ empty_state('hourglass', 'You are not on any waiting list', 'Use the form to join one when a location is full.') }}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <form method="post" class="sp-card p-4 needs-validation" novalidate>
+        {{ csrf() }}
+        <h2 class="h6 fw-bold mb-3">Join a waiting list</h2>
+        <div class="mb-2">
+          <label class="form-label small" for="w-vehicle">Vehicle</label>
+          <select class="form-select" id="w-vehicle" name="vehicle_id" required>
+            {% for v in vehicles %}<option value="{{ v.vehicle_id }}" {% if preset.vehicle_id|string == v.vehicle_id|string %}selected{% endif %}>{{ v.registration_no }}{% if v.is_ev %} ⚡{% endif %}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small" for="w-location">Location</label>
+          <select class="form-select" id="w-location" name="location_id" required>
+            {% for l in locations %}<option value="{{ l.location_id }}" {% if preset.location_id|string == l.location_id|string %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label small" for="w-type">Slot type</label>
+            <select class="form-select" id="w-type" name="slot_type">
+              <option value="REGULAR">Regular</option>
+              <option value="EV" {% if preset.slot_type == 'EV' %}selected{% endif %}>EV</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small" for="w-charger">Charger</label>
+            <select class="form-select" id="w-charger" name="charger_type">
+              <option value="">Any</option>
+              <option value="AC" {% if preset.charger_type == 'AC' %}selected{% endif %}>AC</option>
+              <option value="DC" {% if preset.charger_type == 'DC' %}selected{% endif %}>DC fast</option>
+            </select>
+          </div>
+        </div>
+        <div class="mb-2"><label class="form-label small" for="w-start">From</label>
+          <input type="datetime-local" class="form-control" id="w-start" name="start" value="{{ preset.start }}" step="900" required></div>
+        <div class="mb-3"><label class="form-label small" for="w-end">Until</label>
+          <input type="datetime-local" class="form-control" id="w-end" name="end" value="{{ preset.end }}" step="900" required></div>
+        <button class="btn btn-primary w-100" {% if not vehicles %}disabled{% endif %}>Join waiting list</button>
+        <div class="small sp-muted mt-2">You can only join when nothing compatible is free. Priority comes from your profile
+          (1 standard, 2 premium, 3 accessibility permit).</div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Payment{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <div class="row justify-content-center">
+    <div class="col-lg-6">
+      <div class="sp-card p-4 p-md-5 sp-fade-in">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <div class="small text-uppercase sp-muted">SmartPark Pay · simulated gateway</div>
+            <h1 class="h4 fw-bold mb-0">{{ 'Confirm your booking' if r.status == 'HELD' else 'Pay outstanding balance' }}</h1>
+          </div>
+          <span class="badge text-bg-warning">TEST MODE</span>
+        </div>
+        <div class="bg-light rounded-3 p-3 mb-4 small">
+          <div class="d-flex justify-content-between"><span>Reservation</span><strong>#{{ r.reservation_id }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Slot</span><strong>{{ r.location_name }} · {{ r.slot_code }}</strong></div>
+          <div class="d-flex justify-content-between"><span>Time</span><strong>{{ r.start_time|dt('%d %b, %I:%M %p') }} – {{ r.end_time|dt('%I:%M %p') }}</strong></div>
+          {% if r.status == 'HELD' %}
+          <div class="d-flex justify-content-between"><span>Hold expires in</span>
+            <strong class="sp-countdown text-danger" data-countdown="{{ r.hold_expires_at.isoformat() }}" data-reload-on-expire="1"></strong></div>
+          {% endif %}
+          <hr class="my-2">
+          <div class="d-flex justify-content-between fs-5"><span>Amount</span><strong>{{ amount|inr }}</strong></div>
+          <div class="sp-muted">Amount is calculated by the database — it cannot be changed from the browser.</div>
+        </div>
+        <form method="post" class="needs-validation" novalidate>
+          {{ csrf() }}
+          <div class="mb-3">
+            <label class="form-label">Payment method</label>
+            <div class="row g-2">
+              {% for m, icon in [('UPI', 'phone'), ('CARD', 'credit-card'), ('NETBANKING', 'bank'), ('WALLET', 'wallet2')] %}
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="method" id="m-{{ m }}" value="{{ m }}" {% if loop.first %}checked{% endif %} required>
+                <label class="btn btn-outline-primary w-100 py-3" for="m-{{ m }}"><i class="bi bi-{{ icon }} d-block fs-4"></i>{{ m|title }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="simulate_failure" name="simulate_failure">
+            <label class="form-check-label small" for="simulate_failure">Simulate a failed payment (for testing)</label>
+          </div>
+          <button class="btn btn-teal w-100 py-2"><i class="bi bi-shield-lock"></i> Pay {{ amount|inr }}</button>
+          <a href="{{ url_for('reservations.detail', reservation_id=r.reservation_id) }}" class="btn btn-link w-100 mt-1">Back to reservation</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

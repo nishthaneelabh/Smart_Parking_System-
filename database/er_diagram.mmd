@@ -1,0 +1,149 @@
+erDiagram
+    USERS ||--o{ VEHICLES : "owns"
+    USERS ||--o{ RESERVATIONS : "makes"
+    USERS ||--o{ WAITING_LIST : "joins"
+    USERS |o--o{ CHARGER_MAINTENANCE : "reports"
+    VEHICLES ||--o{ RESERVATIONS : "is parked in"
+    VEHICLES ||--o{ WAITING_LIST : "waits with"
+    LOCATIONS ||--|{ PARKING_SLOTS : "contains"
+    LOCATIONS ||--o{ WAITING_LIST : "requested at"
+    LOCATIONS |o--o{ PRICING_RULES : "overrides price"
+    PARKING_SLOTS ||--o| CHARGERS : "has (EV slots only)"
+    PARKING_SLOTS ||--o{ RESERVATIONS : "is booked by"
+    CHARGERS ||--o{ CHARGER_MAINTENANCE : "has tickets"
+    RESERVATIONS ||--o{ PAYMENTS : "is paid by"
+    RESERVATIONS |o--o| WAITING_LIST : "offer for"
+
+    USERS {
+        int user_id PK
+        varchar full_name
+        varchar email UK
+        varchar phone UK
+        text password_hash
+        varchar role "USER | ADMIN"
+        varchar membership_tier "STANDARD | PREMIUM"
+        boolean has_accessibility_permit
+        timestamptz created_at
+    }
+    VEHICLES {
+        int vehicle_id PK
+        int user_id FK
+        varchar registration_no UK
+        varchar vehicle_type "CAR | SUV | BIKE"
+        varchar model_name
+        boolean is_ev
+        varchar connector_type "NULL unless EV"
+    }
+    LOCATIONS {
+        int location_id PK
+        varchar name
+        varchar address
+        varchar city
+        char pincode
+        numeric latitude
+        numeric longitude
+        boolean is_active
+    }
+    PARKING_SLOTS {
+        int slot_id PK
+        int location_id FK
+        varchar slot_code "UK with location_id"
+        smallint floor_level
+        varchar slot_type "REGULAR | EV"
+        varchar size_class "BIKE | CAR | SUV"
+        varchar occupancy_status "FREE | OCCUPIED (physical, now)"
+        boolean is_active
+    }
+    CHARGERS {
+        int charger_id PK
+        int slot_id FK,UK
+        varchar charger_type "AC | DC"
+        varchar connector_type
+        numeric power_kw
+        varchar status "OPERATIONAL | FAULTY"
+        date installed_on
+    }
+    CHARGER_MAINTENANCE {
+        int maintenance_id PK
+        int charger_id FK
+        varchar issue_description
+        int reported_by FK
+        timestamptz reported_at
+        timestamptz resolved_at "NULL = open"
+        varchar resolution_note
+    }
+    RESERVATIONS {
+        int reservation_id PK
+        int user_id FK
+        int vehicle_id FK
+        int slot_id FK
+        timestamptz start_time
+        timestamptz end_time
+        tstzrange booking_period "generated, EXCLUDE"
+        varchar status "HELD..NO_SHOW"
+        varchar source "DIRECT | WAITLIST"
+        timestamptz hold_expires_at
+        numeric parking_fee
+        numeric charging_fee
+        numeric overstay_fine
+        numeric total_amount "generated"
+        timestamptz check_in_time
+        timestamptz check_out_time
+        varchar cancel_reason
+    }
+    WAITING_LIST {
+        int entry_id PK
+        int user_id FK
+        int vehicle_id FK
+        int location_id FK
+        varchar slot_type
+        varchar charger_type "NULL = any"
+        timestamptz start_time
+        timestamptz end_time
+        smallint priority "1..4"
+        varchar status "WAITING | OFFERED | ACCEPTED | EXPIRED | CANCELLED"
+        timestamptz requested_at
+        int offered_reservation_id FK,UK
+    }
+    PAYMENTS {
+        int payment_id PK
+        int reservation_id FK
+        numeric amount
+        varchar payment_type "BOOKING | FINE"
+        varchar method "UPI | CARD | NETBANKING | WALLET"
+        varchar status "SUCCESS | FAILED | REFUNDED"
+        varchar transaction_ref UK
+        timestamptz paid_at
+    }
+    PRICING_RULES {
+        int rule_id PK
+        int location_id FK "NULL = default"
+        varchar applies_to "PARKING | AC | DC"
+        numeric rate_per_hour
+        boolean is_active
+    }
+    PEAK_HOURS {
+        int peak_id PK
+        varchar label
+        varchar day_type "ALL | WEEKDAY | WEEKEND"
+        time start_time
+        time end_time
+        numeric multiplier
+    }
+    BOOKING_POLICY {
+        smallint policy_id PK "always 1"
+        int hold_minutes
+        int waitlist_offer_minutes
+        int grace_minutes
+        numeric overstay_multiplier
+        int no_show_minutes
+    }
+    AUDIT_LOGS {
+        bigint log_id PK
+        varchar table_name
+        int record_id
+        varchar action
+        varchar old_status
+        varchar new_status
+        timestamptz changed_at
+    }

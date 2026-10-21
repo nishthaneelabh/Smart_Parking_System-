@@ -1,0 +1,64 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import csrf %}
+{% block title %}Pricing &amp; Policy{% endblock %}
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-1">Pricing &amp; policy</h1>
+<p class="sp-muted">All rates live in the database (<code>pricing_rules</code>, <code>peak_hours</code>, <code>booking_policy</code>).
+  <code>fn_calculate_price</code> reads them for every booking, so changes apply to new bookings immediately.
+  Existing bookings keep the price they were booked at.</p>
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="sp-card p-0 mb-4">
+      <div class="p-3 border-bottom fw-bold">Hourly rates (₹)</div>
+      <div class="table-responsive">
+        <table class="table mb-0 small">
+          <thead><tr><th>Applies to</th><th>Location</th><th>Description</th><th style="width:220px">Rate / hour</th></tr></thead>
+          <tbody>
+          {% for r in rules %}
+            <tr>
+              <td><span class="badge {{ 'text-bg-danger' if r.applies_to == 'DC' else ('text-bg-info' if r.applies_to == 'AC' else 'text-bg-primary') }}">{{ r.applies_to }}</span></td>
+              <td>{{ r.location_name }}</td><td class="sp-muted">{{ r.description or '' }}</td>
+              <td>
+                <form method="post" class="d-flex gap-1">
+                  {{ csrf() }}<input type="hidden" name="rule_id" value="{{ r.rule_id }}">
+                  <div class="input-group input-group-sm"><span class="input-group-text">₹</span>
+                    <input class="form-control" name="rate" type="number" min="0" step="0.5" value="{{ r.rate_per_hour }}" required></div>
+                  <button class="btn btn-sm btn-outline-primary">Save</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="sp-card p-0 mb-4">
+      <div class="p-3 border-bottom fw-bold">Peak hours (India time)</div>
+      <table class="table mb-0 small">
+        <thead><tr><th>Window</th><th>Days</th><th style="width:170px">Multiplier</th></tr></thead>
+        <tbody>
+        {% for p in peaks %}
+          <tr><td>{{ p.label }}<div class="sp-muted">{{ p.start_time.strftime('%H:%M') }}–{{ p.end_time.strftime('%H:%M') }}</div></td><td>{{ p.day_type }}</td>
+            <td><form method="post" class="d-flex gap-1">{{ csrf() }}<input type="hidden" name="peak_id" value="{{ p.peak_id }}">
+              <input class="form-control form-control-sm" name="multiplier" type="number" min="1" max="5" step="0.05" value="{{ p.multiplier }}" required>
+              <button class="btn btn-sm btn-outline-primary">Save</button></form></td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="sp-card p-3 small">
+      <div class="fw-bold mb-2">Booking policy (booking_policy table)</div>
+      <ul class="mb-0">
+        <li>Temporary hold: <strong>{{ policy.hold_minutes }} min</strong> to pay</li>
+        <li>Waiting-list offer window: <strong>{{ policy.waitlist_offer_minutes }} min</strong></li>
+        <li>Overstay grace: <strong>{{ policy.grace_minutes }} min</strong>, then <strong>{{ policy.overstay_multiplier }}×</strong> parking rate per started hour</li>
+        <li>No-show after <strong>{{ policy.no_show_minutes }} min</strong> without check-in</li>
+        <li>Check-in opens <strong>{{ policy.early_checkin_minutes }} min</strong> early</li>
+        <li>Booking length: {{ policy.min_booking_minutes }} min – {{ policy.max_booking_hours }} h, up to {{ policy.max_advance_days }} days ahead</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

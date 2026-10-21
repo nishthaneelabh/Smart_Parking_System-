@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Find &amp; Book{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h1 class="h3 fw-bold mb-1">Find an available slot</h1>
+  <p class="sp-muted">Choose your vehicle and time. We only show slots that are free for the <strong>whole</strong> period,
+    fit your vehicle, and (for EV slots) have a working, compatible charger.</p>
+
+  {% if not vehicles %}
+    <div class="alert alert-warning">You need to <a href="{{ url_for('auth.vehicles') }}">add a vehicle</a> before booking.</div>
+  {% endif %}
+
+  <form id="search-form" class="sp-card p-3 p-md-4 mb-4 needs-validation" novalidate>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-3">
+        <label class="form-label" for="vehicle_id">Vehicle</label>
+        <select class="form-select" id="vehicle_id" name="vehicle_id" required>
+          {% for v in vehicles %}
+            <option value="{{ v.vehicle_id }}" data-ev="{{ 1 if v.is_ev else 0 }}">{{ v.registration_no }} · {{ v.model_name }}{% if v.is_ev %} ⚡{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <label class="form-label" for="location_id">Location</label>
+        <select class="form-select" id="location_id" name="location_id">
+          <option value="">All locations</option>
+          {% for l in locations %}
+            <option value="{{ l.location_id }}" {% if preset.location_id|string == l.location_id|string %}selected{% endif %}>{{ l.name }} ({{ l.city }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label" for="slot_type">Slot type</label>
+        <select class="form-select" id="slot_type" name="slot_type">
+          <option value="">Any</option>
+          <option value="REGULAR" {% if preset.slot_type == 'REGULAR' %}selected{% endif %}>Regular parking</option>
+          <option value="EV" {% if preset.slot_type == 'EV' %}selected{% endif %}>EV charging</option>
+        </select>
+      </div>
+      <div class="col-6 col-lg-3">
+        <label class="form-label" for="charger_type">Charger</label>
+        <select class="form-select" id="charger_type" name="charger_type">
+          <option value="">Any</option>
+          <option value="AC" {% if preset.charger_type == 'AC' %}selected{% endif %}>AC (slow)</option>
+          <option value="DC" {% if preset.charger_type == 'DC' %}selected{% endif %}>DC fast</option>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="start">From</label>
+        <input type="datetime-local" class="form-control" id="start" name="start" value="{{ preset.start }}" step="900" required>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label" for="end">Until</label>
+        <input type="datetime-local" class="form-control" id="end" name="end" value="{{ preset.end }}" step="900" required>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" {% if not vehicles %}disabled{% endif %}><i class="bi bi-search"></i> Search</button>
+      </div>
+    </div>
+  </form>
+
+  <div id="results-header" class="d-flex justify-content-between align-items-center mb-2 d-none">
+    <h2 class="h6 fw-bold mb-0" id="results-title"></h2>
+    <span class="small sp-muted">Prices include peak-hour pricing, calculated by PostgreSQL</span>
+  </div>
+  <div id="results" class="row g-3"></div>
+</div>
+
+<!-- Confirm booking modal -->
+<div class="modal fade" id="bookModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Confirm reservation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="book-summary"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+        <button type="button" class="btn btn-teal" id="book-confirm"><i class="bi bi-lock"></i> Reserve now</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.SP_URLS = {
+    search: "{{ url_for('parking.api_search') }}",
+    reserve: "{{ url_for('reservations.api_create') }}",
+    waitlist: "{{ url_for('waiting_list.api_join') }}",
+    waitlistPage: "{{ url_for('waiting_list.index') }}"
+  };
+</script>
+<script src="{{ url_for('static', filename='js/slots.js') }}"></script>
+{% endblock %}

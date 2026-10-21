@@ -1,0 +1,58 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import csrf, status_badge %}
+{% block title %}Reservations{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 fw-bold mb-0">Reservations</h1>
+  <form method="get" class="d-flex gap-2">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="">All statuses</option>
+      {% for s in ['HELD','CONFIRMED','CHECKED_IN','COMPLETED','CANCELLED','EXPIRED','NO_SHOW'] %}
+        <option value="{{ s }}" {% if s == status %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <select name="location_id" class="form-select" onchange="this.form.submit()">
+      <option value="">All locations</option>
+      {% for l in locations %}<option value="{{ l.location_id }}" {% if l.location_id == location_id %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+    </select>
+  </form>
+</div>
+<div class="sp-card p-0">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 small">
+      <thead><tr><th>#</th><th>Driver</th><th>Slot</th><th>Period</th><th>Status</th><th>Source</th><th class="text-end">Total</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+      {% for r in reservations %}
+        <tr>
+          <td><a href="{{ url_for('reservations.detail', reservation_id=r.reservation_id) }}">{{ r.reservation_id }}</a></td>
+          <td>{{ r.full_name }}<div class="sp-muted">{{ r.registration_no }}</div></td>
+          <td>{{ r.location_name }}<div class="sp-muted">{{ r.slot_code }}{% if r.charger_type %} · {{ r.charger_type }}{% endif %}</div></td>
+          <td>{{ r.start_time|dt('%d %b %H:%M') }} → {{ r.end_time|dt('%H:%M') }}</td>
+          <td>{{ status_badge(r.status) }}{% if r.overstay_fine > 0 %}<div class="text-danger">fine {{ r.overstay_fine|inr }}</div>{% endif %}</td>
+          <td>{{ r.source }}</td>
+          <td class="text-end">{{ r.total_amount|inr }}</td>
+          <td class="text-end text-nowrap">
+            {% set back = request.full_path %}
+            {% if r.status == 'CONFIRMED' %}
+              <form method="post" action="{{ url_for('reservations.check_in', reservation_id=r.reservation_id) }}" class="d-inline">
+                {{ csrf() }}<input type="hidden" name="next" value="{{ back }}"><button class="btn btn-sm btn-outline-info">Check in</button></form>
+            {% endif %}
+            {% if r.status == 'CHECKED_IN' %}
+              <a class="btn btn-sm btn-outline-info" href="{{ url_for('reservations.detail', reservation_id=r.reservation_id) }}">Check out…</a>
+            {% endif %}
+            {% if r.status in ['HELD','CONFIRMED'] %}
+              <form method="post" action="{{ url_for('reservations.cancel', reservation_id=r.reservation_id) }}" class="d-inline"
+                    data-confirm="Cancel reservation #{{ r.reservation_id }} and refund it?">
+                {{ csrf() }}<input type="hidden" name="next" value="{{ back }}"><input type="hidden" name="reason" value="Cancelled by admin">
+                <button class="btn btn-sm btn-outline-danger">Cancel</button></form>
+            {% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="text-center sp-muted py-4">No reservations match.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

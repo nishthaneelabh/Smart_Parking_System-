@@ -1,0 +1,59 @@
+{% extends "admin/_layout.html" %}
+{% block title %}Concurrency Demo{% endblock %}
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-1">Live double-booking test</h1>
+<p class="sp-muted mb-3">The server opens <strong>two separate PostgreSQL connections</strong> (two backend processes) for
+  <em>Demo User A</em> and <em>Demo User B</em>, releases them at the same instant, and both try to reserve the
+  <strong>same slot for the same time</strong>. Watch who gets the row lock and what the other one receives.</p>
+
+<div class="row g-4">
+  <div class="col-xl-4">
+    <form id="demo-form" class="sp-card p-4">
+      <div class="mb-2">
+        <label class="form-label small" for="d-slot">Slot</label>
+        <select class="form-select" id="d-slot" required>
+          {% for s in slots %}
+            <option value="{{ s.slot_id }}" {% if s.slot_type == 'EV' and s.charger_type == 'DC' and loop.index < 12 %}selected{% endif %}>
+              #{{ s.slot_id }} {{ s.location_name }} · {{ s.slot_code }} ({{ s.slot_type }}{% if s.charger_type %} {{ s.charger_type }}{% endif %})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-2"><label class="form-label small" for="d-start">From</label>
+        <input type="datetime-local" class="form-control" id="d-start" value="{{ start }}" step="900" required></div>
+      <div class="mb-2"><label class="form-label small" for="d-end">Until</label>
+        <input type="datetime-local" class="form-control" id="d-end" value="{{ end }}" step="900" required></div>
+      <div class="mb-2">
+        <label class="form-label small" for="d-hold">Winner keeps its transaction open for <strong id="d-hold-val">2</strong> s</label>
+        <input type="range" class="form-range" id="d-hold" min="0" max="5" step="0.5" value="2"
+               oninput="document.getElementById('d-hold-val').textContent=this.value">
+      </div>
+      <div class="form-check form-switch mb-1">
+        <input class="form-check-input" type="checkbox" id="d-nowait">
+        <label class="form-check-label small" for="d-nowait">Use <code>FOR UPDATE NOWAIT</code> (loser fails instantly)</label>
+      </div>
+      <div class="form-check form-switch mb-3">
+        <input class="form-check-input" type="checkbox" id="d-cleanup" checked>
+        <label class="form-check-label small" for="d-cleanup">Cancel the winning hold afterwards (so you can repeat)</label>
+      </div>
+      <button class="btn btn-teal w-100 py-2" id="d-run"><i class="bi bi-lightning-charge"></i> Run simultaneous booking</button>
+    </form>
+    <div class="sp-card p-3 mt-3 small">
+      <div class="fw-bold mb-1">What protects the slot?</div>
+      <ol class="mb-0 ps-3">
+        <li><code>SELECT … FROM parking_slots WHERE slot_id = $1 FOR UPDATE</code> — the second transaction must wait.</li>
+        <li>After the lock, a <em>fresh</em> overlap check sees the first booking → <code>SLOT_UNAVAILABLE</code>.</li>
+        <li>Last line of defence: <code>EXCLUDE USING gist (slot_id WITH =, booking_period WITH &amp;&amp;)</code>.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="col-xl-8">
+    <div id="d-output" class="sp-card p-4 h-100">
+      <div class="text-center sp-muted py-5"><i class="bi bi-people display-5 d-block mb-2 opacity-50"></i>Press <strong>Run</strong> to start the race.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.SP_DEMO_URL = "{{ url_for('admin.api_concurrency_demo') }}";</script>
+<script src="{{ url_for('static', filename='js/concurrency.js') }}"></script>
+{% endblock %}

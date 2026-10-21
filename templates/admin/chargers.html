@@ -1,0 +1,61 @@
+{% extends "admin/_layout.html" %}
+{% from "_macros.html" import csrf, status_badge, charger_label %}
+{% block title %}Chargers{% endblock %}
+{% block admin_content %}
+<h1 class="h3 fw-bold mb-1">EV chargers</h1>
+<p class="sp-muted">Marking a charger <strong>FAULTY</strong> fires trigger C: upcoming bookings on it are cancelled with a full refund
+  and the drivers go to the front of the waiting list (priority 4). Marking it <strong>repaired</strong> closes the ticket and
+  immediately processes the waiting list.</p>
+<div class="sp-card p-0 mb-4">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead><tr><th>#</th><th>Location / slot</th><th>Charger</th><th>Status</th><th>Upcoming bookings</th><th style="min-width:300px">Action</th></tr></thead>
+      <tbody>
+      {% for c in chargers %}
+        <tr class="{% if c.status == 'FAULTY' %}table-danger{% endif %}">
+          <td class="sp-muted">{{ c.charger_id }}</td>
+          <td><div class="fw-semibold">{{ c.location_name }}</div><div class="small sp-muted">Slot {{ c.slot_code }} · {{ c.city }}</div></td>
+          <td>{{ charger_label(c.charger_type, c.power_kw, c.connector_type) }}</td>
+          <td>{{ status_badge(c.status) }}
+            {% if c.open_issue %}<div class="small text-danger">{{ c.open_issue }}</div><div class="small sp-muted">since {{ c.fault_since|dt('%d %b %H:%M') }}</div>{% endif %}</td>
+          <td>{{ c.upcoming }}</td>
+          <td>
+            {% if c.status == 'OPERATIONAL' %}
+              <form method="post" action="{{ url_for('admin.mark_faulty', charger_id=c.charger_id) }}" class="d-flex gap-1"
+                    data-confirm="Mark charger #{{ c.charger_id }} FAULTY? {{ c.upcoming }} upcoming booking(s) will be cancelled and refunded.">
+                {{ csrf() }}
+                <input class="form-control form-control-sm" name="issue" placeholder="Describe the fault" required maxlength="300">
+                <button class="btn btn-sm btn-danger text-nowrap"><i class="bi bi-exclamation-triangle"></i> Faulty</button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('admin.mark_repaired', charger_id=c.charger_id) }}" class="d-flex gap-1">
+                {{ csrf() }}
+                <input class="form-control form-control-sm" name="note" placeholder="Repair note" maxlength="300">
+                <button class="btn btn-sm btn-success text-nowrap"><i class="bi bi-wrench"></i> Repaired</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="sp-card p-0">
+  <div class="p-3 border-bottom fw-bold">Maintenance tickets (CHARGER_MAINTENANCE)</div>
+  <div class="table-responsive">
+    <table class="table mb-0 small">
+      <thead><tr><th>#</th><th>Charger</th><th>Issue</th><th>Reported</th><th>Resolved</th><th>Note</th></tr></thead>
+      <tbody>
+      {% for t in tickets %}
+        <tr><td>{{ t.maintenance_id }}</td><td>#{{ t.charger_id }} · {{ t.location_name }} {{ t.slot_code }}</td><td>{{ t.issue_description }}</td>
+            <td>{{ t.reported_at|dt('%d %b %H:%M') }}{% if t.reporter %}<div class="sp-muted">{{ t.reporter }}</div>{% endif %}</td>
+            <td>{% if t.resolved_at %}{{ t.resolved_at|dt('%d %b %H:%M') }}{% else %}<span class="badge text-bg-danger">OPEN</span>{% endif %}</td>
+            <td>{{ t.resolution_note or '' }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
