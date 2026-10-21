@@ -29,7 +29,7 @@ the database**:
 
 Real concurrent tests with separate database connections show that out
 of 2–6 simultaneous conflicting requests, exactly one succeeds every
-time. 59 automated tests pass.
+time. 52 automated tests pass.
 
 ## 3. Problem statement
 (PPT slide 2)
@@ -296,17 +296,14 @@ index made no difference, because another index served the query just
 as well. Indexes only pay off for selective conditions.
 
 ## 20. Testing
-59 pytest tests cover T01–T20 and more: registration, login and RBAC,
+52 pytest tests cover T01–T20 and more: registration, login and RBAC,
 search, booking, real concurrency (2 and 6 users, NOWAIT, different
 slots), overlap / non-overlap, cancellation, hold expiry, no-show, slot
 release, peak and charger pricing, overstay fines (6 boundary cases),
 waiting-list insertion, ordering and progression (including two parallel
-workers), faulty charger and repair, and integrity violations. Seven more
-(D01–D07) check the public-demo mode: each visitor's copy is a complete
-copy of the schema, changes stay private, a refresh resets them, and the
-template data is never modified.
+workers), faulty charger and repair, and integrity violations.
 
-Result on 21 Oct 2026: **59 passed**. Details in `docs/Test_Cases.md`.
+Result on 21 Oct 2026: **52 passed**. Details in `docs/Test_Cases.md`.
 
 ## 21. Results and limitations
 **Results**

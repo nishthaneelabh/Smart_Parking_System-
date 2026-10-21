@@ -10,8 +10,8 @@ import time
 
 import psycopg
 
-from config.database import (AppError, connect, current_sandbox, db_errors, query_all,
-                             query_one, transaction, translate_db_error)
+from config.database import (AppError, connect, db_errors, query_all, query_one,
+                             transaction, translate_db_error)
 
 # ---------------------------------------------------------------------------
 # Search
@@ -152,8 +152,7 @@ def run_concurrency_demo(slot_id, start, end, hold_seconds=2.0, nowait=False, cl
     Returns a dict with a timeline, each user's outcome and a verification
     query showing how many active reservations overlap (must be <= 1).
     """
-    sandbox = current_sandbox()       # the threads below have no request context
-    users = _demo_users(dsn, sandbox)
+    users = _demo_users(dsn)
     if len(users) < 2:
         raise AppError("DEMO_USERS_MISSING", "Demo users demo.a@example.in / demo.b@example.in not found (re-run seed.sql)")
 
@@ -167,7 +166,7 @@ def run_concurrency_demo(slot_id, start, end, hold_seconds=2.0, nowait=False, cl
             events.append({"t_ms": round((time.perf_counter() - t_zero) * 1000, 1), "who": who, "msg": msg})
 
     def worker(label, user):
-        conn = connect(dsn, sandbox)
+        conn = connect(dsn)
         result = {"user": user["full_name"], "label": label, "user_id": user["user_id"]}
         t0 = None
         try:
@@ -210,7 +209,7 @@ def run_concurrency_demo(slot_id, start, end, hold_seconds=2.0, nowait=False, cl
     for t in threads:
         t.join(timeout=60)
 
-    with connect(dsn, sandbox) as conn:
+    with connect(dsn) as conn:
         overlap = conn.execute(
             """SELECT reservation_id, user_id, status, start_time, end_time
                  FROM reservations
@@ -243,8 +242,8 @@ def run_concurrency_demo(slot_id, start, end, hold_seconds=2.0, nowait=False, cl
     }
 
 
-def _demo_users(dsn=None, sandbox=None):
-    with connect(dsn, sandbox) as conn:
+def _demo_users(dsn=None):
+    with connect(dsn) as conn:
         return conn.execute(
             """SELECT u.user_id, u.full_name, min(v.vehicle_id) AS vehicle_id
                  FROM users u JOIN vehicles v ON v.user_id = u.user_id

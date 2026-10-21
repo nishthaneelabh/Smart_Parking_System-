@@ -11,36 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  {% if demo_mode and not demo_fresh %}
-  <script>
-    // Demo mode: a page refresh throws away this visitor's changes. The server spots most
-    // refreshes itself; this catches browsers that don't send Cache-Control on reload.
-    (function () {
-      var nav = performance.getEntriesByType && performance.getEntriesByType("navigation")[0];
-      if (!nav || nav.type !== "reload") return;
-      document.documentElement.style.visibility = "hidden";
-      fetch("{{ url_for('demo.reset') }}", {method: "POST", credentials: "same-origin",
-        headers: {"X-CSRF-Token": "{{ csrf_token() }}", "Accept": "application/json"}})
-        .finally(function () { location.replace(location.href); });
-    })();
-  </script>
-  {% endif %}
   {% block head %}{% endblock %}
 </head>
 <body class="d-flex flex-column min-vh-100">
-{% if demo_mode %}
-<div class="sp-demo-banner py-1">
-  <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2">
-    <span><i class="bi bi-info-circle"></i> <strong>Demo mode:</strong> you have your own copy of the sample data.
-      Add, change or delete anything — it all goes back to the original when you refresh the page.</span>
-    <form method="post" action="{{ url_for('demo.reset') }}" class="m-0">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="hidden" name="next" value="{{ request.full_path if request.method == 'GET' else '' }}">
-      <button class="btn btn-link btn-sm p-0 sp-demo-reset"><i class="bi bi-arrow-counterclockwise"></i> Reset demo data</button>
-    </form>
-  </div>
-</div>
-{% endif %}
 <nav class="navbar navbar-expand-lg navbar-dark sp-navbar sticky-top">
   <div class="container">
     <a class="navbar-brand d-flex align-items-center gap-2 fw-semibold" href="{{ url_for('auth.index') }}">

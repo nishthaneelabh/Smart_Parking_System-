@@ -2,14 +2,13 @@
 
 Run:  python app.py      (then open http://127.0.0.1:5000)
 """
-import hashlib
 import os
 import secrets
 from datetime import timedelta
 from decimal import Decimal
 
 from dotenv import load_dotenv
-from flask import Flask, abort, g, jsonify, render_template, request, session
+from flask import Flask, abort, jsonify, render_template, request, session
 from flask.json.provider import DefaultJSONProvider
 
 load_dotenv()
@@ -30,23 +29,12 @@ class JSONProvider(DefaultJSONProvider):
         return DefaultJSONProvider.default(o)
 
 
-def _secret_key():
-    """SECRET_KEY from the environment. Without one, derive a stable key from the
-    (secret) database URL so that sessions survive restarts and work across the
-    several server instances a host like Vercel runs."""
-    if os.environ.get("SECRET_KEY"):
-        return os.environ["SECRET_KEY"]
-    if os.environ.get("DATABASE_URL"):
-        return hashlib.sha256(b"smartpark-session:" + os.environ["DATABASE_URL"].encode()).hexdigest()
-    return secrets.token_hex(32)
-
-
 def create_app(test_config=None):
     app = Flask(__name__)
     app.json_provider_class = JSONProvider
     app.json = JSONProvider(app)
     app.config.update(
-        SECRET_KEY=_secret_key(),
+        SECRET_KEY=os.environ.get("SECRET_KEY") or secrets.token_hex(32),
         PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -56,18 +44,14 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     from routes.admin import bp as admin_bp
-    from routes import demo
     from routes.auth import bp as auth_bp
     from routes.parking import bp as parking_bp
     from routes.payments import bp as payments_bp
     from routes.reservations import bp as reservations_bp
     from routes.waiting_list import bp as waiting_bp
 
-    for bp in (auth_bp, parking_bp, reservations_bp, payments_bp, waiting_bp, admin_bp, demo.bp):
+    for bp in (auth_bp, parking_bp, reservations_bp, payments_bp, waiting_bp, admin_bp):
         app.register_blueprint(bp)
-
-    # Public-demo mode (DEMO_SANDBOX=1, automatic on Vercel): private data per visitor
-    app.before_request(demo.before_request)
 
     app.teardown_appcontext(close_db)
 
@@ -103,8 +87,6 @@ def create_app(test_config=None):
                 "name": session.get("name"),
                 "role": session.get("role"),
             } if session.get("user_id") else None,
-            "demo_mode": bool(g.get("sandbox")),
-            "demo_fresh": bool(g.get("sandbox_fresh")),
         }
 
     @app.template_filter("inr")

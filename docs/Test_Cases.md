@@ -15,7 +15,7 @@ How the suite works:
 | Date | 21 Oct 2026 |
 | Environment | Ubuntu Linux, Python 3.14.4, PostgreSQL 18.6, psycopg 3.3.6, Flask 3.1.3 |
 | Command | `pytest -v` |
-| Result | **59 passed in 24.1 s** (0 failed) |
+| Result | **52 passed in 17.7 s** (0 failed) |
 
 The "Actual" lines below record this run. Re-run on your own machine
 before the viva and update them if anything differs.
@@ -242,21 +242,6 @@ Each statement must fail with the stated error:
 
 - **Also:** deleting a vehicle that has bookings via the website shows a friendly RESTRICT message (`test_vehicle_with_bookings_cannot_be_deleted`), and invalid booking inputs give the right codes (`test_invalid_booking_inputs`).
 - **Test:** `test_booking.py::test_T20_integrity_constraints`
-- **Actual:** PASSED.
-
----
-
-### D01–D07 — Public-demo mode (per-visitor copy, reset on refresh)
-- **Objective:** on the online demo, each visitor works on a private copy of the sample data, and refreshing the page discards their changes.
-- **Checks:**
-  - **D01:** a new visitor's schema has the same row counts as the template (40 parking slots and so on), plus the same triggers, constraints and views.
-  - **D02:** a booking shows up on *My Bookings* and is stored only in the visitor's copy. A refresh builds a new copy without it, drops the old one, and keeps the seed user logged in.
-  - **D03:** two visitors can book the same slot at the same time, because each works on their own copy.
-  - **D04:** *Reset demo data* starts a new copy. An account registered in the old copy is logged out, and that account never reaches the template.
-  - **D05:** the two-connection concurrency demo runs inside the visitor's copy, and exactly one booking succeeds.
-  - **D06:** copies idle for more than 3 hours are dropped.
-  - **D07:** with demo mode off (the default locally), nothing changes.
-- **Test:** `test_demo_sandbox.py`
 - **Actual:** PASSED.
 
 ---

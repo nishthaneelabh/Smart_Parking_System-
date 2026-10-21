@@ -23,44 +23,29 @@ APP_TIMEZONE = "Asia/Kolkata"
 
 
 def get_dsn():
-    # Hosted Postgres (Neon via Vercel) also provides an unpooled URL; prefer it,
-    # because the pooler rejects the "options" startup parameter used in connect().
-    dsn = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("DATABASE_URL")
+    dsn = os.environ.get("DATABASE_URL")
     if not dsn:
         raise RuntimeError(
             "DATABASE_URL is not set. Copy .env.example to .env and fill in your PostgreSQL password."
         )
-    # Neon pooled host "ep-xxx-pooler.region..." -> direct host "ep-xxx.region..."
-    return dsn.replace("-pooler.", ".")
+    return dsn
 
 
-def connect(dsn=None, sandbox=None):
+def connect(dsn=None):
     """Open a NEW independent connection (used directly by tests, scripts and
-    the concurrency demo, which needs two separate connections).
-
-    sandbox: a visitor's private demo schema (services/demo_sandbox.py); its
-    tables are found first, functions still come from "parking"."""
-    path = f"{sandbox},parking,public" if sandbox else "parking,public"
+    the concurrency demo, which needs two separate connections)."""
     return psycopg.connect(
         dsn or get_dsn(),
         autocommit=True,
         row_factory=dict_row,
-        options=f"-c search_path={path} -c timezone={APP_TIMEZONE}",
+        options=f"-c search_path=parking,public -c timezone={APP_TIMEZONE}",
     )
-
-
-def current_sandbox():
-    """The demo sandbox of the current request, or None (normal mode / no request)."""
-    try:
-        return g.get("sandbox")
-    except RuntimeError:          # outside a Flask app context
-        return None
 
 
 def get_db():
     """The connection for the current request (opened on first use)."""
     if "db" not in g:
-        g.db = connect(sandbox=g.get("sandbox"))
+        g.db = connect()
     return g.db
 
 

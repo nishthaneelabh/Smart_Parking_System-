@@ -17,7 +17,7 @@ double-booked**, even when many people book at the same instant.
 | Priority waiting list with 10-minute offers | `fn_process_waiting_list` |
 | Auto-expiry of unpaid holds (pg_cron or Python) | `fn_run_expiry_jobs`, `scripts/scheduler.py` |
 | Live two-connection double-booking demo | Admin → *Concurrency demo* |
-| 59 automated tests (T01–T20, demo mode D01–D07) | `tests/` |
+| 52 automated tests (T01–T20) | `tests/` |
 
 Documentation: [Project Report](docs/Project_Report.md) ·
 [ER Diagram](docs/ER_Diagram.md) · [Database Schema](docs/Database_Schema.md) ·
@@ -41,36 +41,6 @@ go to <http://localhost:8000>.
 
 **The PostgreSQL + Flask application below is the actual DBMS project.** The demo only lets people click
 through it without installing anything.
-
----
-
-## Live demo of the real system (Vercel + Neon PostgreSQL)
-
-The full Flask + PostgreSQL application can also run online in **public-demo mode**
-(`DEMO_SANDBOX=1`, switched on automatically on Vercel):
-
-- Every visitor gets a **private copy** of the sample data (14 users, 6 locations, **40 parking slots**,
-  16 chargers, 19 bookings ...), built by running `database/seed.sql` into a schema of their own.
-- Visitors can add, change and delete anything; their changes stay while they click around.
-- **Refreshing the page** (or *Reset demo data* in the yellow banner) throws the copy away and starts
-  again from the original data. Nobody ever sees anybody else's changes.
-- The real tables, functions, triggers, EXCLUDE constraints and row locks are used: the copy's
-  connections run with `search_path = sb_<visitor>, parking, public`, so the PL/pgSQL code in the
-  `parking` schema works on the visitor's tables. The `parking` schema itself is never modified.
-- Idle copies are deleted after 3 hours. Code: `services/demo_sandbox.py`, `routes/demo.py`.
-
-### Deploying it
-
-1. Create a free PostgreSQL database at <https://neon.tech> (region **Singapore**, to match
-   `vercel.json`). Click **Connect**, turn **Connection pooling off**, and copy the connection string.
-2. On <https://vercel.com>: **Add New → Project →** import this GitHub repository (branch
-   `smart-parking-implementation`). Vercel detects Flask by itself.
-3. In the Vercel project: **Settings → Environment Variables**, add `DATABASE_URL` = the Neon
-   connection string (optionally also `SECRET_KEY` = any long random text). Then **Deployments → ⋯ →
-   Redeploy**.
-
-The first visit creates all tables, functions and triggers in the empty database automatically
-(the same files `scripts/init_db.py` runs), so nothing has to be run by hand.
 
 ---
 
@@ -270,18 +240,15 @@ Smart_Parking_System-/
 │   ├── demo_queries.sql      verification queries for the examiner
 │   ├── benchmark.sql         200k-row EXPLAIN ANALYZE benchmark (rolled back)
 │   └── er_diagram.mmd        Mermaid ER diagram
-├── routes/                   auth, parking, reservations, payments, waiting_list, admin, guards,
-│                             demo (public-demo mode: per-visitor data, reset on refresh)
-├── services/                 booking_service, pricing_service, queue_service, timeutil,
-│                             demo_sandbox (builds/drops each visitor's private copy)
+├── routes/                   auth, parking, reservations, payments, waiting_list, admin, guards
+├── services/                 booking_service, pricing_service, queue_service, timeutil
 ├── scripts/                  init_db.py, scheduler.py, concurrency_demo.py, record_concurrency.py
 ├── templates/                base + user pages; admin_dashboard.html; admin/*.html
 ├── static/                   css/style.css, js/app.js, js/slots.js, js/concurrency.js, images/
-├── tests/                    conftest + test_booking/_concurrency/_triggers/_waiting_list/_pricing/_demo_sandbox
+├── tests/                    conftest + test_booking/_concurrency/_triggers/_waiting_list/_pricing
 ├── demo/                     static browser demo for GitHub Pages (resets on refresh)
 │   ├── index.html  selftest.html  css/  js/engine.js (rules)  js/seed.js  js/recorded-concurrency.js
 ├── .github/workflows/pages.yml   publishes demo/ to GitHub Pages
-├── vercel.json               Vercel deployment (Singapore region, next to the Neon database)
 └── docs/                     report, ER, schema, test cases, demo guide, viva Q&A
 ```
 
@@ -309,7 +276,7 @@ Two small changes from the suggested structure:
 - A map view.
 
 **Verification status:**
-- Everything above was run on Linux (Ubuntu, PostgreSQL 18.6, Python 3.14). The 59 tests pass, and the SQL demo scripts produce the outputs documented in them.
+- Everything above was run on Linux (Ubuntu, PostgreSQL 18.6, Python 3.14). The 52 tests pass, and the SQL demo scripts produce the outputs documented in them.
 - The Windows instructions follow the standard installers but were **not** executed on Windows by us.
 - pg_cron was not available in our environment, so the scheduler was verified through `scripts/scheduler.py`; the `scheduler.sql` pg_cron path is untested.
 

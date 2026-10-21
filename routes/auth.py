@@ -150,14 +150,12 @@ def login():
         flash("Invalid email or password.", "danger")
         return render_template("login.html", email=email, demo_accounts=demo_accounts()), 401
 
-    csrf, sandbox = session.get("csrf_token"), session.get("sandbox")
+    csrf = session.get("csrf_token")
     session.clear()                         # prevent session fixation
     session.permanent = True
     session.update(user_id=user["user_id"], name=user["full_name"], role=user["role"])
     if csrf:
         session["csrf_token"] = csrf
-    if sandbox:                             # demo mode: keep this visitor's data copy
-        session["sandbox"] = sandbox
     flash(f"Welcome back, {user['full_name'].split()[0]}!", "success")
 
     nxt = request.args.get("next") or ""
@@ -168,10 +166,7 @@ def login():
 
 @bp.route("/logout", methods=["POST"])
 def logout():
-    sandbox = session.get("sandbox")
     session.clear()
-    if sandbox:
-        session["sandbox"] = sandbox
     flash("You have been logged out.", "info")
     return redirect(url_for("auth.index"))
 

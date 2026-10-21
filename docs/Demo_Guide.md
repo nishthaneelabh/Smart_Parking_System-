@@ -120,7 +120,7 @@ trigger activity, and **Run scheduled jobs now**.
 ```
 pytest -v
 ```
-59 tests, including real concurrent bookings, all pass.
+52 tests, including real concurrent bookings, all pass.
 
 ---
 
