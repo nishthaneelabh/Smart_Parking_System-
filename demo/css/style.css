@@ -1,0 +1,117 @@
+/* SmartPark EV — blue / teal / white theme */
+:root {
+  --sp-navy: #0b2545;
+  --sp-blue: #13557f;
+  --sp-teal: #0fa3a3;
+  --sp-teal-dark: #0b8282;
+  --sp-bg: #f4f8fb;
+  --sp-card: #ffffff;
+  --sp-border: #e1e8ef;
+  --sp-muted: #5f7184;
+  --bs-primary: #13557f;
+  --bs-primary-rgb: 19, 85, 127;
+  --bs-info: #0fa3a3;
+  --bs-info-rgb: 15, 163, 163;
+  --bs-body-font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body { background: var(--sp-bg); color: #1d2b3a; }
+
+.sp-navbar { background: linear-gradient(90deg, var(--sp-navy), var(--sp-blue)); box-shadow: 0 2px 12px rgba(11, 37, 69, .25); }
+.text-teal { color: #5fe0d8 !important; }
+.sp-footer { background: var(--sp-navy); color: #b8c7d6; }
+
+.btn-teal { background: var(--sp-teal); border-color: var(--sp-teal); color: #fff; }
+.btn-teal:hover, .btn-teal:focus { background: var(--sp-teal-dark); border-color: var(--sp-teal-dark); color: #fff; }
+.btn-primary { background: var(--sp-blue); border-color: var(--sp-blue); }
+.btn-primary:hover { background: var(--sp-navy); border-color: var(--sp-navy); }
+.text-bg-info { background-color: var(--sp-teal) !important; color: #fff !important; }
+.text-bg-primary { background-color: var(--sp-blue) !important; }
+
+/* Cards */
+.sp-card { background: var(--sp-card); border: 1px solid var(--sp-border); border-radius: 14px;
+           box-shadow: 0 1px 3px rgba(16, 42, 67, .05); }
+.sp-card-hover { transition: transform .15s ease, box-shadow .15s ease; }
+.sp-card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(16, 42, 67, .12); }
+.sp-section-title { font-weight: 700; color: var(--sp-navy); }
+.sp-muted { color: var(--sp-muted); }
+
+/* Hero */
+.sp-hero { background: radial-gradient(1200px 400px at 80% -20%, rgba(15,163,163,.35), transparent),
+                       linear-gradient(135deg, var(--sp-navy) 0%, var(--sp-blue) 60%, var(--sp-teal) 130%);
+           color: #fff; border-radius: 0 0 28px 28px; }
+.sp-hero h1 { font-weight: 700; letter-spacing: -.02em; }
+.sp-hero .lead { color: #d3e4f2; }
+.sp-flow { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.sp-flow span { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25);
+                border-radius: 999px; padding: .3rem .85rem; font-size: .9rem; }
+
+/* Stat tiles */
+.sp-stat { padding: 1.1rem 1.25rem; }
+.sp-stat .value { font-size: 1.75rem; font-weight: 700; color: var(--sp-navy); line-height: 1.1; }
+.sp-stat .label { color: var(--sp-muted); font-size: .85rem; }
+.sp-stat .icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+                 font-size: 1.3rem; background: rgba(15,163,163,.12); color: var(--sp-teal-dark); }
+.sp-stat .icon.blue { background: rgba(19,85,127,.12); color: var(--sp-blue); }
+.sp-stat .icon.red { background: rgba(220,53,69,.12); color: #c82333; }
+.sp-stat .icon.amber { background: rgba(255,193,7,.18); color: #a07800; }
+
+/* Slots */
+.sp-slot-icon { width: 42px; height: 42px; border-radius: 10px; display: inline-grid; place-items: center;
+                background: rgba(19,85,127,.1); color: var(--sp-blue); font-size: 1.3rem; }
+.sp-slot-icon.sp-ev { background: rgba(15,163,163,.14); color: var(--sp-teal-dark); }
+.sp-badge { font-weight: 600; letter-spacing: .02em; }
+.sp-price { font-size: 1.35rem; font-weight: 700; color: var(--sp-navy); }
+
+/* Tables */
+.table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--sp-muted);
+                  background: #f7fafc; border-bottom-width: 1px; white-space: nowrap; }
+.table td { vertical-align: middle; }
+
+/* Status timeline on reservation page */
+.sp-steps { display: flex; justify-content: space-between; position: relative; margin: 1rem 0 .5rem; }
+.sp-steps::before { content: ""; position: absolute; top: 15px; left: 6%; right: 6%; height: 3px; background: var(--sp-border); }
+.sp-step { position: relative; text-align: center; flex: 1; font-size: .8rem; color: var(--sp-muted); }
+.sp-step .dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto .35rem; display: grid; place-items: center;
+                background: #fff; border: 3px solid var(--sp-border); position: relative; z-index: 1; }
+.sp-step.done .dot { background: var(--sp-teal); border-color: var(--sp-teal); color: #fff; }
+.sp-step.current .dot { border-color: var(--sp-teal); color: var(--sp-teal); box-shadow: 0 0 0 5px rgba(15,163,163,.15); }
+.sp-step.done, .sp-step.current { color: var(--sp-navy); font-weight: 600; }
+
+/* Admin side nav */
+.sp-admin-nav .nav-link { color: #39506a; border-radius: 10px; padding: .55rem .8rem; }
+.sp-admin-nav .nav-link:hover { background: rgba(19,85,127,.07); }
+.sp-admin-nav .nav-link.active { background: var(--sp-blue); color: #fff; }
+
+/* Concurrency timeline */
+.sp-timeline { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }
+.sp-timeline .row-a { border-left: 4px solid var(--sp-blue); }
+.sp-timeline .row-b { border-left: 4px solid #e8710a; }
+.sp-timeline .ev { padding: .35rem .7rem; margin-bottom: .3rem; background: #fff; border-radius: 6px; animation: spFade .3s ease both; }
+.sp-verdict { border-radius: 14px; padding: 1rem 1.25rem; }
+
+/* Countdown */
+.sp-countdown { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* Animations */
+.sp-fade-in { animation: spFade .35s ease both; }
+@keyframes spFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.form-control:focus, .form-select:focus { border-color: var(--sp-teal); box-shadow: 0 0 0 .2rem rgba(15,163,163,.2); }
+
+@media (max-width: 576px) {
+  .sp-stat .value { font-size: 1.4rem; }
+  .sp-steps .sp-step span { display: none; }
+}
+
+/* Quick demo login cards */
+.sp-demo-account { background: #fff; border: 1px solid var(--sp-border); border-radius: 12px; padding: .75rem .9rem;
+                   transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; color: inherit; }
+.sp-demo-account:hover, .sp-demo-account:focus-visible { border-color: var(--sp-teal); box-shadow: 0 4px 14px rgba(15,163,163,.18);
+                                                         transform: translateY(-2px); outline: none; }
+.sp-demo-account.is-admin { background: #fffaf0; }
+
+/* ---- static demo only ---- */
+.sp-demo-banner { background: #fff4d6; border-bottom: 1px solid #f0d58a; color: #6b4e00; font-size: .85rem; }
+.sp-demo-banner a { color: #6b4e00; font-weight: 600; }
+.sp-recorded { border: 2px dashed #f0b429; border-radius: 12px; background: #fffaf0; }

@@ -26,6 +26,24 @@ Documentation: [Project Report](docs/Project_Report.md) ·
 
 ---
 
+## Online demo (no installation)
+
+The `demo/` folder holds a **browser-only version** of the website, published to GitHub Pages by
+`.github/workflows/pages.yml`. It needs no server or database:
+
+- All sample data is created in the browser when the page loads.
+- **Every change is reset when you refresh.**
+- The booking rules are a JavaScript port of the PostgreSQL functions and triggers (`demo/js/engine.js`). They are checked against the same expected values as the pytest suite by `demo/selftest.html`.
+- A browser cannot run real concurrent database transactions. The demo's *Concurrency demo* page therefore **replays results recorded from PostgreSQL** by `scripts/record_concurrency.py`, and says so on the page.
+
+To try it locally, open `demo/index.html` in a browser, or run `python -m http.server -d demo 8000` and
+go to <http://localhost:8000>.
+
+**The PostgreSQL + Flask application below is the actual DBMS project.** The demo only lets people click
+through it without installing anything.
+
+---
+
 ## Quick start (if you already have Python and PostgreSQL)
 
 ```bash
@@ -224,10 +242,13 @@ Smart_Parking_System-/
 │   └── er_diagram.mmd        Mermaid ER diagram
 ├── routes/                   auth, parking, reservations, payments, waiting_list, admin, guards
 ├── services/                 booking_service, pricing_service, queue_service, timeutil
-├── scripts/                  init_db.py, scheduler.py, concurrency_demo.py
+├── scripts/                  init_db.py, scheduler.py, concurrency_demo.py, record_concurrency.py
 ├── templates/                base + user pages; admin_dashboard.html; admin/*.html
 ├── static/                   css/style.css, js/app.js, js/slots.js, js/concurrency.js, images/
 ├── tests/                    conftest + test_booking/_concurrency/_triggers/_waiting_list/_pricing
+├── demo/                     static browser demo for GitHub Pages (resets on refresh)
+│   ├── index.html  selftest.html  css/  js/engine.js (rules)  js/seed.js  js/recorded-concurrency.js
+├── .github/workflows/pages.yml   publishes demo/ to GitHub Pages
 └── docs/                     report, ER, schema, test cases, demo guide, viva Q&A
 ```
 
