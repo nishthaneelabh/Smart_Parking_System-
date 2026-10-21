@@ -39,6 +39,11 @@ The `demo/` folder holds a **browser-only version** of the website, published to
 To try it locally, open `demo/index.html` in a browser, or run `python -m http.server -d demo 8000` and
 go to <http://localhost:8000>.
 
+**Deploying on Vercel:** on [vercel.com](https://vercel.com) choose *Add New → Project*, import this
+GitHub repository, set **Root Directory** to `demo`, leave the framework as *Other* with no build
+command, and deploy. No database or environment variables are needed. Every push redeploys
+automatically. `demo/vercel.json` adds security headers.
+
 **The PostgreSQL + Flask application below is the actual DBMS project.** The demo only lets people click
 through it without installing anything.
 
