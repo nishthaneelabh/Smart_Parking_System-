@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [{ "src": "demo/**", "use": "@vercel/static" }],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Frame-Options": "DENY"
+      },
+      "continue": true
+    },
+    { "src": "/logo.svg", "headers": { "Cache-Control": "public, max-age=86400" }, "continue": true },
+    { "src": "/", "dest": "/demo/index.html" },
+    { "src": "/(.*)", "dest": "/demo/$1" }
+  ]
+}
